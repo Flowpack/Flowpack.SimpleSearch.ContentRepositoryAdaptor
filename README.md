@@ -1,7 +1,7 @@
-Flowpack.SimpleSearch.ContentRepositoryAdaptor
+SimpleSearch ContentRepositoryAdaptor
 ==============================================
 
-a search for the TYPO3 CR based on the SimpleSearch
+a search for the TYPO3 CR based on the SimpleSearch.
 
 Usage is pretty easy. Install this and Flowpack.SimpleSearch.
 Run the command:
