@@ -1,0 +1,15 @@
+{
+    "name": "flowpack/simplesearch-contentrepositoryadaptor",
+    "type": "typo3-flow-package",
+    "description": "Implement search specific for the TYPO3CR",
+    "require": {
+        "typo3/flow": "*",
+        "typo3/typo3cr": "*",
+        "flowpack/simplesearch": "*"
+    },
+    "autoload": {
+        "psr-0": {
+            "Flowpack\\SimpleSearch\\ContentRepositoryAdaptor": "Classes"
+        }
+    }
+}

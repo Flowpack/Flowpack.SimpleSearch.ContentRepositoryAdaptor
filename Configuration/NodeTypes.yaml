@@ -1,0 +1,59 @@
+
+'TYPO3.Neos:Node': &node
+  properties:
+    '__identifier':
+      search:
+        indexing: "${node.identifier}"
+
+    '__workspace':
+      search:
+        indexing: "${node.workspace.name}"
+
+    '__path':
+      search:
+        indexing: "${node.path}"
+
+    '__parentPath':
+      search:
+        indexing: "${'#' + Array.join(IndexingHelper.buildAllPathPrefixes(node.parentPath), '#') + '#'}"
+
+    '__sortIndex':
+      search:
+        indexing: "${node.index}"
+
+    '_removed':
+      search:
+        # deliberately don't map or index this
+        indexing: ''
+
+    '__type':
+      search:
+        indexing: "${node.nodeType.name}"
+    # we index the node type INCLUDING ALL SUPERTYPES
+    '__typeAndSupertypes':
+      search:
+        indexing: "${'#' + Array.join(IndexingHelper.extractNodeTypeNamesAndSupertypes(node.nodeType), '#') + '#'}"
+
+'unstructured': *node
+
+'TYPO3.Neos:Hidable':
+  properties:
+    '_hidden':
+      search:
+        indexing: "${node.isHidden()}"
+
+'TYPO3.Neos:Timable':
+  properties:
+    '_hiddenBeforeDateTime':
+      search:
+        indexing: "${(node.hiddenBeforeDateTime ? node.hiddenBeforeDateTime.format('U') : null)}"
+
+    '_hiddenAfterDateTime':
+      search:
+        indexing: "${(node.hiddenAfterDateTime ? node.hiddenAfterDateTime.format('U') : null)}"
+
+'TYPO3.Neos.NodeTypes:Text':
+  properties:
+    text:
+      search:
+        fulltextExtractor: "${IndexingHelper.extractHtmlTags(node.properties.text)}"

@@ -1,0 +1,49 @@
+Flowpack:
+  SimpleSearch:
+    ContentRepositoryAdaptor:
+      defaultConfigurationPerType:
+        string:
+          indexing: "${value}"
+
+        boolean:
+          indexing: "${value}"
+
+        integer:
+          indexing: "${value}"
+
+        date:
+          indexing: "${(value ? value.format('U') + 'Z' : null)}"
+
+
+        'TYPO3\Media\Domain\Model\Video':
+          # deliberately don't map or index this
+          indexing: ''
+
+        'TYPO3\Media\Domain\Model\ImageVariant':
+          # deliberately don't map or index this
+          indexing: ''
+
+        'references':
+          indexing: "${Array.join(IndexingHelper.convertArrayOfNodesToArrayOfNodeIdentifiers(value))}"
+
+        'reference':
+          indexing: "${value.identifier}"
+
+
+      # Default context objects that are available in Eel expressions
+      #
+      # New variables should be added with a package key prefix. Example:
+      #
+      #   defaultContext:
+      #     'MyPackage.String': 'MyPackage\Helper\StringHelper'
+      #
+      defaultContext:
+        String: 'TYPO3\Eel\Helper\StringHelper'
+        Array: 'TYPO3\Eel\Helper\ArrayHelper'
+        Date: 'TYPO3\Eel\Helper\DateHelper'
+        IndexingHelper: 'Flowpack\SimpleSearch\ContentRepositoryAdaptor\Eel\IndexingHelper'
+
+TYPO3:
+  TypoScript:
+    defaultContext:
+      Search: 'Flowpack\SimpleSearch\ContentRepositoryAdaptor\Eel\SearchHelper'

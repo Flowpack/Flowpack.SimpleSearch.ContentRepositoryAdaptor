@@ -1,0 +1,301 @@
+<?php
+namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search;
+
+use TYPO3\Flow\Annotations as Flow;
+use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
+
+/**
+ * Query Builder for Content Repository searches
+ */
+class QueryBuilder implements QueryBuilderInterface, \TYPO3\Eel\ProtectedContextAwareInterface {
+
+	/**
+	 * @Flow\Inject
+	 * @var \Flowpack\SimpleSearch\Domain\Service\IndexInterface
+	 */
+	protected $indexClient;
+
+	/**
+	 * @Flow\Inject
+	 * @var \TYPO3\Flow\Log\SystemLoggerInterface
+	 */
+	protected $logger;
+
+	/**
+	 * The node inside which searching should happen
+	 *
+	 * @var NodeInterface
+	 */
+	protected $contextNode;
+	/**
+	 * @var integer
+	 */
+	protected $limit;
+
+	/**
+	 * @var integer
+	 */
+	protected $requestedResults;
+
+	/**
+	 * @var integer
+	 */
+	protected $from;
+
+	/**
+	 * Sorting strings
+	 *
+	 * @var array<string>
+	 */
+	protected $sorting = array();
+
+	/**
+	 * where clauses
+	 *
+	 * @var array
+	 */
+	protected $where = array();
+
+	/**
+	 * Optional message for a log entry on execution of this Query.
+	 *
+	 * @var string
+	 */
+	protected $logMessage;
+
+	/**
+	 * Should this Query be logged?
+	 *
+	 * @var boolean
+	 */
+	protected $logThisQuery = FALSE;
+
+	/**
+	 * @param NodeInterface $contextNode
+	 * @return QueryBuilder
+	 */
+	public function query(NodeInterface $contextNode) {
+		$this->where[] = "(__parentPath LIKE '%#" . $contextNode->getPath() . "#%')";
+		$this->where[] = "(__workspace IN ('live', '" . $contextNode->getContext()->getWorkspace()->getName() . "'))";
+
+		$this->contextNode = $contextNode;
+
+		return $this;
+	}
+
+	/**
+	 * HIGH-LEVEL API
+	 */
+
+	/**
+	 * Filter by node type, taking inheritance into account.
+	 *
+	 * @param string $nodeType the node type to filter for
+	 * @return QueryBuilder
+	 */
+	public function nodeType($nodeType) {
+		$this->where[] = "(__typeAndSuperTypes LIKE '%#" . $nodeType . "#%')";
+
+		return $this;
+	}
+
+	/**
+	 * Sort descending by $propertyName
+	 *
+	 * @param string $propertyName the property name to sort by
+	 * @return QueryBuilder
+	 */
+	public function sortDesc($propertyName) {
+		$this->sorting[] = $propertyName . ' DESC';
+
+		return $this;
+	}
+
+
+	/**
+	 * Sort ascending by $propertyName
+	 *
+	 * @param string $propertyName the property name to sort by
+	 * @return QueryBuilder
+	 */
+	public function sortAsc($propertyName) {
+		$this->sorting[] = $propertyName . ' ASC';
+
+		return $this;
+	}
+
+
+	/**
+	 * output only $limit records
+	 *
+	 * Internally, we fetch $limit*$workspaceNestingLevel records, because we fetch the *conjunction* of all workspaces;
+	 * and then we filter after execution when we have found the right number of results.
+	 *
+	 * This algorithm can be re-checked when https://github.com/elasticsearch/elasticsearch/issues/3300 is merged.
+	 *
+	 *
+	 * @param integer $limit
+	 * @return QueryBuilder
+	 */
+	public function limit($limit) {
+		if (!$limit) {
+			return $this;
+		}
+
+		$currentWorkspaceNestingLevel = 1;
+		$workspace = $this->contextNode->getContext()->getWorkspace();
+		while ($workspace->getBaseWorkspace() !== NULL) {
+			$currentWorkspaceNestingLevel++;
+			$workspace = $workspace->getBaseWorkspace();
+		}
+
+		$this->requestedResults = $limit;
+		$this->limit = $limit * $currentWorkspaceNestingLevel;
+
+		return $this;
+	}
+
+	/**
+	 * add an exact-match query for a given property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @return QueryBuilder
+	 */
+	public function exactMatch($propertyName, $propertyValue) {
+		if ($propertyValue instanceof NodeInterface) {
+			$propertyValue = $propertyValue->getIdentifier();
+		}
+
+		$this->where[] = "(" . $propertyName . " = '" . $propertyValue . "')";
+
+		return $this;
+	}
+
+	/**
+	 * @param string $searchword
+	 * @return QueryBuilder
+	 */
+	public function fulltext($searchword) {
+		$this->where[] = "(rowid IN (SELECT rowid FROM fulltext WHERE fulltext MATCH '" . $searchword . "')";
+
+		return $this;
+	}
+
+	/**
+	 * Execute the query and return the list of nodes as result
+	 *
+	 * @return array<\TYPO3\TYPO3CR\Domain\Model\NodeInterface>
+	 */
+	public function execute() {
+		$timeBefore = microtime(TRUE);
+		$query = $this->buildQueryString();
+		$result = $this->indexClient->query($query);
+		$timeAfterwards = microtime(TRUE);
+
+		if ($this->logThisQuery === TRUE) {
+			$this->logger->log('Query Log (' . $this->logMessage . '): ' . $query . ' -- execution time: ' . (($timeAfterwards - $timeBefore) * 1000) . ' ms -- Total Results: ' . count($result), LOG_DEBUG);
+		}
+
+		if (empty($result)) {
+			return array();
+		}
+
+		$nodes = array();
+
+		/**
+		 * TODO: This code below is not fully correct yet:
+		 *
+		 * We always fetch $limit * (numerOfWorkspaces) records; so that we find a node:
+		 * - *once* if it is only in live workspace and matches the query
+		 * - *once* if it is only in user workspace and matches the query
+		 * - *twice* if it is in both workspaces and matches the query *both times*. In this case we filter the duplicate record.
+		 * - *once* if it is in the live workspace and has been DELETED in the user workspace (STILL WRONG)
+		 * - *once* if it is in the live workspace and has been MODIFIED to NOT MATCH THE QUERY ANYMORE in user workspace (STILL WRONG)
+		 *
+		 * If we want to fix this cleanly, we'd need to do an *additional query* in order to filter all nodes from a non-user workspace
+		 * which *do exist in the user workspace but do NOT match the current query*. This has to be done somehow "recursively"; and later
+		 * we might be able to use https://github.com/elasticsearch/elasticsearch/issues/3300 as soon as it is merged.
+		 */
+		foreach ($result as $hit) {
+			$nodePath = $hit['__path'];
+			$node = $this->contextNode->getNode($nodePath);
+			if ($node instanceof NodeInterface) {
+				$nodes[$node->getIdentifier()] = $node;
+				if ($this->requestedResults > 0 && count($nodes) >= $this->requestedResults) {
+					break;
+				}
+			}
+		}
+
+		return array_values($nodes);
+	}
+
+	/**
+	 * @return string
+	 */
+	protected function buildQueryString() {
+		$whereString = implode(' AND ', $this->where);
+		$orderString = implode(', ', $this->sorting);
+
+		$queryString = 'SELECT * FROM objects WHERE ' . $whereString;
+		if (count($this->sorting)) {
+			$queryString .= ' ORDER BY ' . $orderString;
+		}
+
+		if ($this->limit !== NULL) {
+			$queryString .= ' LIMIT ' . $this->limit;
+		}
+
+		return $queryString;
+	}
+
+	/**
+	 * Log the current request for debugging after it has been executed.
+	 *
+	 * @param string $message an optional message to identify the log entry
+	 * @return $this
+	 */
+	public function log($message = NULL) {
+		$this->logThisQuery = TRUE;
+		$this->logMessage = $message;
+
+		return $this;
+	}
+
+	/**
+	 * Return the total number of hits for the query.
+	 *
+	 * @return integer
+	 */
+	public function count() {
+		$timeBefore = microtime(TRUE);
+		$query = $this->buildQueryString();
+		$result = $this->indexClient->query($query);
+		$timeAfterwards = microtime(TRUE);
+
+		$count = count($result);
+
+		if ($this->logThisQuery === TRUE) {
+			$this->logger->log('Query Log (' . $this->logMessage . '): ' . $query . ' -- execution time: ' . (($timeAfterwards - $timeBefore) * 1000) . ' ms -- Total Results: ' . $count, LOG_DEBUG);
+		}
+
+		return $count;
+	}
+
+	/**
+	 * All methods are considered safe
+	 *
+	 * @param string $methodName
+	 * @return boolean
+	 */
+	public function allowsCallOfMethod($methodName) {
+		// query must be called first to establish a context and starting point.
+		if ($this->contextNode === NULL && $methodName !== 'query') {
+			return FALSE;
+		}
+
+		return TRUE;
+	}
+
+}
