@@ -7,13 +7,7 @@ use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
 /**
  * Query Builder for Content Repository searches
  */
-class QueryBuilder implements QueryBuilderInterface, \TYPO3\Eel\ProtectedContextAwareInterface {
-
-	/**
-	 * @Flow\Inject
-	 * @var \Flowpack\SimpleSearch\Domain\Service\IndexInterface
-	 */
-	protected $indexClient;
+class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilder implements QueryBuilderInterface, \TYPO3\Eel\ProtectedContextAwareInterface {
 
 	/**
 	 * @Flow\Inject
@@ -27,10 +21,6 @@ class QueryBuilder implements QueryBuilderInterface, \TYPO3\Eel\ProtectedContext
 	 * @var NodeInterface
 	 */
 	protected $contextNode;
-	/**
-	 * @var integer
-	 */
-	protected $limit;
 
 	/**
 	 * @var integer
@@ -100,39 +90,10 @@ class QueryBuilder implements QueryBuilderInterface, \TYPO3\Eel\ProtectedContext
 	}
 
 	/**
-	 * Sort descending by $propertyName
-	 *
-	 * @param string $propertyName the property name to sort by
-	 * @return QueryBuilder
-	 */
-	public function sortDesc($propertyName) {
-		$this->sorting[] = $propertyName . ' DESC';
-
-		return $this;
-	}
-
-
-	/**
-	 * Sort ascending by $propertyName
-	 *
-	 * @param string $propertyName the property name to sort by
-	 * @return QueryBuilder
-	 */
-	public function sortAsc($propertyName) {
-		$this->sorting[] = $propertyName . ' ASC';
-
-		return $this;
-	}
-
-
-	/**
 	 * output only $limit records
 	 *
 	 * Internally, we fetch $limit*$workspaceNestingLevel records, because we fetch the *conjunction* of all workspaces;
 	 * and then we filter after execution when we have found the right number of results.
-	 *
-	 * This algorithm can be re-checked when https://github.com/elasticsearch/elasticsearch/issues/3300 is merged.
-	 *
 	 *
 	 * @param integer $limit
 	 * @return QueryBuilder
@@ -167,19 +128,7 @@ class QueryBuilder implements QueryBuilderInterface, \TYPO3\Eel\ProtectedContext
 			$propertyValue = $propertyValue->getIdentifier();
 		}
 
-		$this->where[] = "(" . $propertyName . " = '" . $propertyValue . "')";
-
-		return $this;
-	}
-
-	/**
-	 * @param string $searchword
-	 * @return QueryBuilder
-	 */
-	public function fulltext($searchword) {
-		$this->where[] = "(rowid IN (SELECT rowid FROM fulltext WHERE fulltext MATCH '" . $searchword . "')";
-
-		return $this;
+		return parent::exactMatch($propertyName, $propertyValue);
 	}
 
 	/**
@@ -229,25 +178,6 @@ class QueryBuilder implements QueryBuilderInterface, \TYPO3\Eel\ProtectedContext
 		}
 
 		return array_values($nodes);
-	}
-
-	/**
-	 * @return string
-	 */
-	protected function buildQueryString() {
-		$whereString = implode(' AND ', $this->where);
-		$orderString = implode(', ', $this->sorting);
-
-		$queryString = 'SELECT * FROM objects WHERE ' . $whereString;
-		if (count($this->sorting)) {
-			$queryString .= ' ORDER BY ' . $orderString;
-		}
-
-		if ($this->limit !== NULL) {
-			$queryString .= ' LIMIT ' . $this->limit;
-		}
-
-		return $queryString;
 	}
 
 	/**

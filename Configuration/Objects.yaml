@@ -9,9 +9,19 @@ Flowpack\SimpleSearch\ContentRepositoryAdaptor\Command\NodeIndexCommandControlle
             value: 'TYPO3_TYPO3CR'
 
 Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search\QueryBuilderInterface:
-  className: 'Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search\QueryBuilder'
+  className: 'Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search\SqLiteQueryBuilder'
 
-Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search\QueryBuilder:
+Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search\SqLiteQueryBuilder:
+  properties:
+    indexClient:
+      object:
+        factoryObjectName: Flowpack\SimpleSearch\Factory\IndexFactory
+        factoryMethodName: create
+        arguments:
+          1:
+            value: 'TYPO3_TYPO3CR'
+
+Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer\NodeIndexer:
   properties:
     indexClient:
       object:

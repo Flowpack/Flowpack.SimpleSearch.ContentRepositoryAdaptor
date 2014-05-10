@@ -38,7 +38,6 @@ class NodeIndexCommandController extends CommandController {
 	 * @return void
 	 */
 	public function buildCommand($limit = NULL) {
-		$this->nodeIndexer->setIndexClient($this->indexClient);
 		$count = 0;
 		foreach ($this->nodeDataRepository->findAll() as $nodeData) {
 			if ($limit !== NULL && $count > $limit) {

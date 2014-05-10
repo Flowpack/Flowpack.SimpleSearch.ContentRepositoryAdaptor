@@ -1,6 +1,7 @@
 Flowpack:
   SimpleSearch:
     ContentRepositoryAdaptor:
+      indexingBatchSize: 99
       defaultConfigurationPerType:
         string:
           indexing: "${value}"
@@ -47,3 +48,11 @@ TYPO3:
   TypoScript:
     defaultContext:
       Search: 'Flowpack\SimpleSearch\ContentRepositoryAdaptor\Eel\SearchHelper'
+
+  Flow:
+    persistence:
+      doctrine:
+        eventListeners:
+          'Flowpack\SimpleSearch\ContentRepositoryAdaptor\EventListener\NodeDataEventListener':
+            events: ['prePersist', 'preUpdate', 'preRemove', 'postFlush']
+            listener: 'Flowpack\SimpleSearch\ContentRepositoryAdaptor\EventListener\NodeDataEventListener'

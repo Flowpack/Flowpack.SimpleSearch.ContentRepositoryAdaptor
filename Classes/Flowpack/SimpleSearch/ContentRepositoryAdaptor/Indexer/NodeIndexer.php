@@ -14,6 +14,7 @@ use TYPO3\TYPO3CR\Domain\Service\NodeTypeManager;
 class NodeIndexer {
 
 	/**
+	 * @Flow\Inject
 	 * @var \Flowpack\SimpleSearch\Domain\Service\IndexInterface
 	 */
 	protected $indexClient;
@@ -61,13 +62,6 @@ class NodeIndexer {
 	public function injectSettings(array $settings) {
 		$this->defaultConfigurationPerType = $settings['defaultConfigurationPerType'];
 		$this->settings = $settings;
-	}
-
-	/**
-	 * @param \Flowpack\SimpleSearch\Domain\Service\IndexInterface $indexClient
-	 */
-	public function setIndexClient($indexClient) {
-		$this->indexClient = $indexClient;
 	}
 
 	/**
@@ -123,6 +117,22 @@ class NodeIndexer {
 		}
 
 		$this->indexClient->indexData($persistenceObjectIdentifier, $nodePropertiesToBeStoredInIndex, $fulltext);
+	}
+
+	/**
+	 * @param NodeData $nodeData
+	 * @return void
+	 */
+	public function removeNode(NodeData $nodeData) {
+		$persistenceObjectIdentifier = $this->persistenceManager->getIdentifierByObject($nodeData);
+		$this->indexClient->removeData($persistenceObjectIdentifier);
+	}
+
+	/**
+	 * @return void
+	 */
+	public function flush() {
+		// no operation, just here to fullfill a future interface for indexers.
 	}
 
 	/**
