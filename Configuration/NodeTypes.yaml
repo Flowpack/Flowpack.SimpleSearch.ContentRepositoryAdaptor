@@ -57,3 +57,9 @@
     text:
       search:
         fulltextExtractor: "${IndexingHelper.extractHtmlTags(node.properties.text)}"
+
+'Flowpack.SimpleSearch.ContentRepositoryAdaptor:Search':
+  superTypes: ['TYPO3.Neos:Content']
+  ui:
+    label: 'Search'
+    icon: 'icon-search'

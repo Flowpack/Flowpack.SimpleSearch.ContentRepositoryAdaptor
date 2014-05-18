@@ -1,0 +1,8 @@
+prototype(Flowpack.SimpleSearch.ContentRepositoryAdaptor:Search) {
+	searchResults = ${Search.query(site).fulltext(request.arguments.search.word).execute()}
+	searchWord = ${request.arguments.search.word}
+
+	searchResultDocument = ${searchResult ? q(searchResult).closest('[instanceof TYPO3.Neos:Document]').get(0) : null}
+
+	searchResultContentRenderer = ${String.crop(String.stripTags(q(node).property('title') + q(node).property('text')), 300) + '...'}
+}

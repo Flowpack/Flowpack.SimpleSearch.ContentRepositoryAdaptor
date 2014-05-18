@@ -5,8 +5,9 @@
     "license": "MIT",
     "require": {
         "typo3/typo3cr": "*",
-        "typo3/eel": "*",
-        "flowpack/simplesearch": "*"
+        "typo3/flow": "*",
+        "flowpack/simplesearch": "*",
+        "typo3/typo3cr-searchcommons": "*"
     },
     "autoload": {
         "psr-0": {
