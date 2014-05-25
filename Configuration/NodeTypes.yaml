@@ -15,7 +15,7 @@
 
     '__parentPath':
       search:
-        indexing: "${'#' + Array.join(IndexingHelper.buildAllPathPrefixes(node.parentPath), '#') + '#'}"
+        indexing: "${'#' + Array.join(Indexing.buildAllPathPrefixes(node.parentPath), '#') + '#'}"
 
     '__sortIndex':
       search:
@@ -32,7 +32,7 @@
     # we index the node type INCLUDING ALL SUPERTYPES
     '__typeAndSupertypes':
       search:
-        indexing: "${'#' + Array.join(IndexingHelper.extractNodeTypeNamesAndSupertypes(node.nodeType), '#') + '#'}"
+        indexing: "${'#' + Array.join(Indexing.extractNodeTypeNamesAndSupertypes(node.nodeType), '#') + '#'}"
 
 'unstructured': *node
 
@@ -53,10 +53,33 @@
         indexing: "${(node.hiddenAfterDateTime ? node.hiddenAfterDateTime.format('U') : null)}"
 
 'TYPO3.Neos.NodeTypes:Text':
+  search:
+    fulltext:
+      enable: TRUE
   properties:
     text:
       search:
-        fulltextExtractor: "${IndexingHelper.extractHtmlTags(node.properties.text)}"
+        fulltextExtractor: "${Indexing.extractHtmlTags(node.properties.text)}"
+
+'TYPO3.Neos.NodeTypes:Headline':
+  search:
+    fulltext:
+      enable: TRUE
+  properties:
+    title:
+      search:
+        fulltextExtractor: "${Indexing.extractHtmlTags(node.properties.title)}"
+
+'TYPO3.Neos:Document':
+  search:
+    fulltext:
+      isRoot: TRUE
+      enable: TRUE
+  properties:
+    title:
+      search:
+        fulltextExtractor: "${Indexing.extractHtmlTags(node.properties.title)}"
+
 
 'Flowpack.SimpleSearch.ContentRepositoryAdaptor:Search':
   superTypes: ['TYPO3.Neos:Content']

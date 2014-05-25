@@ -3,6 +3,7 @@ namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Command;
 
 use TYPO3\Flow\Annotations as Flow;
 use TYPO3\Flow\Cli\CommandController;
+use TYPO3\TYPO3CR\Domain\Service\ContextFactoryInterface;
 
 /**
  * Provides CLI features for index handling
@@ -30,24 +31,47 @@ class NodeIndexCommandController extends CommandController {
 	protected $nodeDataRepository;
 
 	/**
+	 * @Flow\Inject
+	 * @var ContextFactoryInterface
+	 */
+	protected $contextFactory;
+
+	/**
+	 * @var integer
+	 */
+	protected $indexedNodes;
+
+
+	/**
 	 * Index all nodes.
 	 *
 	 * This command (re-)indexes all nodes contained in the content repository and sets the schema beforehand.
 	 *
+	 *
+	 * @param string $workspace
 	 * @param integer $limit Amount of nodes to index at maximum
 	 * @return void
 	 */
-	public function buildCommand($limit = NULL) {
-		$count = 0;
-		foreach ($this->nodeDataRepository->findAll() as $nodeData) {
-			if ($limit !== NULL && $count > $limit) {
-				break;
-			}
-			$this->nodeIndexer->indexNode($nodeData);
-			$count++;
-		}
+	public function buildCommand($workspace = 'live', $limit = NULL) {
+		$this->indexedNodes = 0;
+		$context = $this->contextFactory->create(array('workspace' => $workspace));
+		$rootNode = $context->getRootNode();
 
-		$this->outputLine('Done. (indexed ' . $count . ' nodes)');
+		$this->traverseNodes($rootNode);
+
+		$this->outputLine('Done. (indexed ' . $this->indexedNodes . ' nodes)');
+		$this->indexedNodes = 0;
+	}
+
+	/**
+	 * @param \TYPO3\TYPO3CR\Domain\Model\Node $currentNode
+	 */
+	protected function traverseNodes(\TYPO3\TYPO3CR\Domain\Model\Node $currentNode) {
+		$this->nodeIndexer->indexNode($currentNode);
+		$this->indexedNodes++;
+		foreach ($currentNode->getChildNodes() as $childNode) {
+			$this->traverseNodes($childNode);
+		}
 	}
 
 	/**

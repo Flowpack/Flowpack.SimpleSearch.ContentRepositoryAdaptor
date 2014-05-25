@@ -3,7 +3,8 @@ TYPO3:
     SearchCommons:
         date:
           indexing: "${(value ? value.format('U') : null)}"
-
+        references:
+          indexing: "${'#' + Array.join(Indexing.convertArrayOfNodesToArrayOfNodeIdentifiers(value), '#') + '#'}"
   Neos:
     typoScript:
       autoInclude:

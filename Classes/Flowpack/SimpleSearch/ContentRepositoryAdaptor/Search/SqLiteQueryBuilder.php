@@ -117,6 +117,20 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	}
 
 	/**
+	 * @param integer $from
+	 * @return QueryBuilder
+	 */
+	public function from($from) {
+		if (!$from) {
+			return $this;
+		}
+
+		$this->from = intval($from);
+
+		return $this;
+	}
+
+	/**
 	 * add an exact-match query for a given property
 	 *
 	 * @param $propertyName
@@ -171,13 +185,10 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 			$node = $this->contextNode->getNode($nodePath);
 			if ($node instanceof NodeInterface) {
 				$nodes[$node->getIdentifier()] = $node;
-				if ($this->requestedResults > 0 && count($nodes) >= $this->requestedResults) {
-					break;
-				}
 			}
 		}
 
-		return array_values($nodes);
+		return array_slice(array_values($nodes), ($this->from ?: 0), ($this->requestedResults ?: NULL));
 	}
 
 	/**

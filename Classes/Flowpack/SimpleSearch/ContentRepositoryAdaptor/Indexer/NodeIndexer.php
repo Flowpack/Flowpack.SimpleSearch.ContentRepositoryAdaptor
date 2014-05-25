@@ -2,6 +2,7 @@
 namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer;
 
 use TYPO3\Flow\Annotations as Flow;
+use TYPO3\TYPO3CR\Domain\Model\Node;
 use TYPO3\TYPO3CR\Domain\Model\NodeData;
 use TYPO3\TYPO3CR\Domain\Service\NodeTypeManager;
 
@@ -39,6 +40,26 @@ class NodeIndexer extends \TYPO3\TYPO3CR\SearchCommons\Indexer\AbstractNodeIndex
 	protected $defaultContextVariables;
 
 	/**
+	 * @var array
+	 */
+	protected $fulltextRootNodeTypes = array();
+
+	/**
+	 * Called by the Flow object framework after creating the object and resolving all dependencies.
+	 *
+	 * @param integer $cause Creation cause
+	 */
+	public function initializeObject($cause) {
+		parent::initializeObject($cause);
+		foreach ($this->nodeTypeManager->getNodeTypes() as $nodeType) {
+			$searchSettingsForNodeType = $nodeType->getConfiguration('search');
+			if (is_array($searchSettingsForNodeType) && isset($searchSettingsForNodeType['fulltext']['isRoot']) && $searchSettingsForNodeType['fulltext']['isRoot'] === TRUE) {
+				$this->fulltextRootNodeTypes[] = $nodeType->getName();
+			}
+		}
+	}
+
+	/**
 	 * @return \Flowpack\SimpleSearch\Domain\Service\IndexInterface
 	 */
 	public function getIndexClient() {
@@ -48,35 +69,33 @@ class NodeIndexer extends \TYPO3\TYPO3CR\SearchCommons\Indexer\AbstractNodeIndex
 	/**
 	 * index this node, and add it to the current bulk request.
 	 *
-	 * @param NodeData $nodeData
+	 * @param Node $node
+	 * @param null $targetWorkspace
 	 * @return void
 	 */
-	public function indexNode(NodeData $nodeData) {
-		$persistenceObjectIdentifier = $this->persistenceManager->getIdentifierByObject($nodeData);
+	public function indexNode(Node $node, $targetWorkspace = NULL) {
+		$identifier = $this->generateUniqueNodeIdentifier($node);
 
-		if ($nodeData->isRemoved()) {
-			$this->indexClient->removeData($persistenceObjectIdentifier);
+		if ($node->isRemoved()) {
+			$this->indexClient->removeData($identifier);
 			return;
 		}
 
 		$fulltextData = array();
-		$nodePropertiesToBeStoredInIndex = $this->extractPropertiesAndFulltext($nodeData, $persistenceObjectIdentifier, $fulltextData);
 
-		// Currently the SimpleSearch supports only a single fulltext bucket so everything is thrown in there.
-		if (count($fulltextData)) {
-			$fulltext = implode("\n" , $fulltextData);
-		} else {
-			$fulltext = '';
+		$nodePropertiesToBeStoredInIndex = $this->extractPropertiesAndFulltext($node, $fulltextData);
+		if (!(count($fulltextData) === 0 || (count($fulltextData) === 1 && $fulltextData['text'] === ''))) {
+			$this->addFulltextToRoot($node, $fulltextData);
 		}
 
-		$this->indexClient->indexData($persistenceObjectIdentifier, $nodePropertiesToBeStoredInIndex, $fulltext);
+		$this->indexClient->indexData($identifier, $nodePropertiesToBeStoredInIndex, $fulltextData);
 	}
 
 	/**
-	 * @param NodeData $nodeData
+	 * @param Node $nodeData
 	 * @return void
 	 */
-	public function removeNode(NodeData $nodeData) {
+	public function removeNode(Node $nodeData) {
 		$persistenceObjectIdentifier = $this->persistenceManager->getIdentifierByObject($nodeData);
 		$this->indexClient->removeData($persistenceObjectIdentifier);
 	}
@@ -86,6 +105,49 @@ class NodeIndexer extends \TYPO3\TYPO3CR\SearchCommons\Indexer\AbstractNodeIndex
 	 */
 	public function flush() {
 		// no operation, just here to fullfill the interface.
+	}
+
+	/**
+	 * @param Node $node
+	 * @param array $fulltext
+	 */
+	protected function addFulltextToRoot(Node $node, $fulltext) {
+		$fulltextRoot = $this->findFulltextRoot($node);
+		if ($fulltextRoot !== NULL) {
+			$identifier = $this->generateUniqueNodeIdentifier($fulltextRoot);
+			$this->indexClient->addToFulltext($fulltext, $identifier);
+		}
+	}
+
+	/**
+	 * @param Node $node
+	 * @return \TYPO3\TYPO3CR\Domain\Model\NodeInterface
+	 */
+	protected function findFulltextRoot(Node $node) {
+		if (in_array($node->getNodeType()->getName(), $this->fulltextRootNodeTypes)) {
+			return NULL;
+		}
+
+		$currentNode = $node->getParent();
+		while ($currentNode !== NULL) {
+			if (in_array($currentNode->getNodeType()->getName(), $this->fulltextRootNodeTypes)) {
+				return $currentNode;
+			}
+
+			$currentNode = $currentNode->getParent();
+		}
+
+		return NULL;
+	}
+
+	/**
+	 * Generate identifier for index entry based on node identifier and context
+	 *
+	 * @param Node $node
+	 * @return string
+	 */
+	protected function generateUniqueNodeIdentifier(Node $node) {
+		return md5($node->getContextPath());
 	}
 
 }
