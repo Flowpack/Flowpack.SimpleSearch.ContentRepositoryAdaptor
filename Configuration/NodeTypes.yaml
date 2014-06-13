@@ -33,6 +33,9 @@
     '__typeAndSupertypes':
       search:
         indexing: "${'#' + Array.join(Indexing.extractNodeTypeNamesAndSupertypes(node.nodeType), '#') + '#'}"
+    '__dimensionshash':
+      search:
+        indexing: "${node.nodeData.dimensionsHash}"
 
 'unstructured': *node
 

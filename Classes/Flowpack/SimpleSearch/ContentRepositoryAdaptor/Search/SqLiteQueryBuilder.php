@@ -65,9 +65,9 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	 * @return QueryBuilder
 	 */
 	public function query(NodeInterface $contextNode) {
-		$this->where[] = "(__parentPath LIKE '%#" . $contextNode->getPath() . "#%')";
+		$this->where[] = "(__parentPath LIKE '%#" . $contextNode->getPath() . "#%' OR __path LIKE '" . $contextNode->getPath() . "')";
 		$this->where[] = "(__workspace IN ('live', '" . $contextNode->getContext()->getWorkspace()->getName() . "'))";
-
+		//$this->where[] = "(__dimensionshash LIKE '" . $contextNode->getNodeData()->getDimensionsHash() . "')";
 		$this->contextNode = $contextNode;
 
 		return $this;

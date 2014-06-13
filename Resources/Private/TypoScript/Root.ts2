@@ -1,5 +1,5 @@
 prototype(Flowpack.SimpleSearch.ContentRepositoryAdaptor:Search) {
-	searchResults = ${Search.query(site).nodeType('TYPO3.Neos:Document').fulltext(request.arguments.search.word).execute()}
+	searchResults = ${Search.query(site).nodeType('TYPO3.Neos:Document').log().fulltext(request.arguments.search.word).execute()}
 	searchWord = ${request.arguments.search.word}
 
 	searchResultContent = ${Search.query(searchResult).nodeType('TYPO3.Neos:Content').fulltextMatchResult(request.arguments.search.word)}

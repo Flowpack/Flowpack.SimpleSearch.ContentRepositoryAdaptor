@@ -26,6 +26,12 @@ class NodeIndexCommandController extends CommandController {
 
 	/**
 	 * @Flow\Inject
+	 * @var \TYPO3\TYPO3CR\Domain\Repository\WorkspaceRepository
+	 */
+	protected $workspaceRepository;
+
+	/**
+	 * @Flow\Inject
 	 * @var \TYPO3\TYPO3CR\Domain\Repository\NodeDataRepository
 	 */
 	protected $nodeDataRepository;
@@ -35,6 +41,12 @@ class NodeIndexCommandController extends CommandController {
 	 * @var ContextFactoryInterface
 	 */
 	protected $contextFactory;
+
+	/**
+	 * @Flow\Inject
+	 * @var \TYPO3\Neos\Domain\Service\ContentDimensionPresetSourceInterface
+	 */
+	protected $contentDimensionPresetSource;
 
 	/**
 	 * @var integer
@@ -49,18 +61,32 @@ class NodeIndexCommandController extends CommandController {
 	 *
 	 *
 	 * @param string $workspace
-	 * @param integer $limit Amount of nodes to index at maximum
 	 * @return void
 	 */
-	public function buildCommand($workspace = 'live', $limit = NULL) {
+	public function buildCommand($workspace = NULL) {
 		$this->indexedNodes = 0;
-		$context = $this->contextFactory->create(array('workspace' => $workspace));
-		$rootNode = $context->getRootNode();
+		if ($workspace === NULL) {
+			foreach ($this->workspaceRepository->findAll() as $workspace) {
+				$this->indexWorkspace($workspace->getName());
+			}
+		} else {
+			$this->indexWorkspace($workspace->getName());
+		}
+		$this->outputLine('Finished indexing.');
+	}
 
-		$this->traverseNodes($rootNode);
+	/**
+	 * @param string $workspaceName
+	 */
+	protected function indexWorkspace($workspaceName) {
+		foreach ($this->calculateDimensionCombinations() as $combination) {
+			$context = $this->contextFactory->create(array('workspace' => $workspaceName, 'dimensions' => $combination));
+			$rootNode = $context->getRootNode();
 
-		$this->outputLine('Done. (indexed ' . $this->indexedNodes . ' nodes)');
-		$this->indexedNodes = 0;
+			$this->traverseNodes($rootNode);
+			$this->outputLine('Workspace "' . $workspaceName . '" and dimensions "' . json_encode($combination) . '" done. (Indexed ' . $this->indexedNodes . ' nodes)');
+			$this->indexedNodes = 0;
+		}
 	}
 
 	/**
@@ -75,6 +101,41 @@ class NodeIndexCommandController extends CommandController {
 	}
 
 	/**
+	 * @return array
+	 */
+	protected function calculateDimensionCombinations() {
+		$dimensionPresets = $this->contentDimensionPresetSource->getAllPresets();
+
+		$dimensionValueCountByDimension = array();
+		$possibleCombinationCount = 1;
+		$combinations = array();
+
+		foreach ($dimensionPresets as $dimensionName => $dimensionPreset) {
+			if (isset($dimensionPreset['presets']) && !empty($dimensionPreset['presets'])) {
+				$dimensionValueCountByDimension[$dimensionName] = count($dimensionPreset['presets']);
+				$possibleCombinationCount = $possibleCombinationCount * $dimensionValueCountByDimension[$dimensionName];
+			}
+		}
+
+		foreach ($dimensionPresets as $dimensionName => $dimensionPreset) {
+			for ($i = 0; $i < $possibleCombinationCount; $i++) {
+				if (!isset($combinations[$i]) || !is_array($combinations[$i])) {
+					$combinations[$i] = array();
+				}
+
+				$currentDimensionCurrentPreset = current($dimensionPresets[$dimensionName]['presets']);
+				$combinations[$i][$dimensionName] = $currentDimensionCurrentPreset['values'];
+
+				if (!next($dimensionPresets[$dimensionName]['presets'])) {
+					reset($dimensionPresets[$dimensionName]['presets']);
+				}
+			}
+		}
+
+		return $combinations;
+	}
+
+	/**
 	 * Utility to check the content of the index.
 	 *
 	 * @param string $queryString
@@ -85,4 +146,5 @@ class NodeIndexCommandController extends CommandController {
 			var_dump($hit);
 		}
 	}
+
 }

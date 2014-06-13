@@ -9,21 +9,23 @@
 	</form>
 	<hr />
 	<div class="search-results">
-		<f:if condition="{searchResults -> f:count()}">
-			<dl>
-				<typo3cr:widget.paginate nodes="{searchResults}" as="paginatedNodes" configuration="{itemsPerPage: 5}">
-				<f:for each="{paginatedNodes}" as="searchResult">
-					<dt>
-						<neos:link.node node="{searchResult}">{searchResult.fullLabel}</neos:link.node>
-					</dt>
+		<f:if condition="{searchWord}">
+			<f:if condition="{searchResults -> f:count()}">
+				<dl>
+					<typo3cr:widget.paginate nodes="{searchResults}" as="paginatedNodes" configuration="{itemsPerPage: 5}">
+						<f:for each="{paginatedNodes}" as="searchResult">
+							<dt>
+								<neos:link.node node="{searchResult}">{searchResult.fullLabel}</neos:link.node>
+							</dt>
 
-					<dd>
-						<ts:render path="searchResultContent" context="{searchResult: searchResult}" />
-					</dd>
-					<hr />
-				</f:for>
-				</typo3cr:widget.paginate>
-			</dl>
+							<dd>
+								<ts:render path="searchResultContent" context="{searchResult: searchResult}" />
+							</dd>
+							<hr />
+						</f:for>
+					</typo3cr:widget.paginate>
+				</dl>
+			</f:if>
 		</f:if>
 	</div>
 </div>
