@@ -7,7 +7,8 @@
         "typo3/typo3cr": "*",
         "typo3/flow": "*",
         "flowpack/simplesearch": "*",
-        "typo3/typo3cr-searchcommons": "*"
+        "typo3/typo3cr-search": "*",
+        "typo3/neos": "*"
     },
     "autoload": {
         "psr-0": {

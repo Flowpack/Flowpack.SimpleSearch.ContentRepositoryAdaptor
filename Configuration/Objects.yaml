@@ -8,10 +8,10 @@ Flowpack\SimpleSearch\ContentRepositoryAdaptor\Command\NodeIndexCommandControlle
           1:
             value: 'TYPO3_TYPO3CR'
 
-TYPO3\TYPO3CR\SearchCommons\Search\QueryBuilderInterface:
+TYPO3\TYPO3CR\Search\Search\QueryBuilderInterface:
   className: 'Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search\SqLiteQueryBuilder'
 
-TYPO3\TYPO3CR\SearchCommons\Indexer\NodeIndexerInterface:
+TYPO3\TYPO3CR\Search\Indexer\NodeIndexerInterface:
   className: 'Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer\NodeIndexer'
 
 Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search\SqLiteQueryBuilder:

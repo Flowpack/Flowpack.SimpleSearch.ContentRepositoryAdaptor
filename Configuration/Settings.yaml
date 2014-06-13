@@ -1,6 +1,6 @@
 TYPO3:
   TYPO3CR:
-    SearchCommons:
+    Search:
         date:
           indexing: "${(value ? value.format('U') : null)}"
         references:

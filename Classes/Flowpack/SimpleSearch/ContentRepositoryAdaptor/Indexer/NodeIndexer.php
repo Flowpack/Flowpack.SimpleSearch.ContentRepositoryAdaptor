@@ -3,7 +3,6 @@ namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer;
 
 use TYPO3\Flow\Annotations as Flow;
 use TYPO3\TYPO3CR\Domain\Model\Node;
-use TYPO3\TYPO3CR\Domain\Model\NodeData;
 use TYPO3\TYPO3CR\Domain\Service\NodeTypeManager;
 
 
@@ -12,7 +11,7 @@ use TYPO3\TYPO3CR\Domain\Service\NodeTypeManager;
  *
  * @Flow\Scope("singleton")
  */
-class NodeIndexer extends \TYPO3\TYPO3CR\SearchCommons\Indexer\AbstractNodeIndexer {
+class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 
 	/**
 	 * @Flow\Inject
