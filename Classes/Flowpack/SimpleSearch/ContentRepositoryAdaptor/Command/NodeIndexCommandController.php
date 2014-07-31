@@ -80,7 +80,7 @@ class NodeIndexCommandController extends CommandController {
 	 */
 	protected function indexWorkspace($workspaceName) {
 		foreach ($this->calculateDimensionCombinations() as $combination) {
-			$context = $this->contextFactory->create(array('workspace' => $workspaceName, 'dimensions' => $combination));
+			$context = $this->contextFactory->create(array('workspaceName' => $workspaceName, 'dimensions' => $combination));
 			$rootNode = $context->getRootNode();
 
 			$this->traverseNodes($rootNode);
