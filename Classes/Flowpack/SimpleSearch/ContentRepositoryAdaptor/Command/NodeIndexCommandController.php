@@ -79,7 +79,7 @@ class NodeIndexCommandController extends CommandController {
 	 * @param string $workspaceName
 	 */
 	protected function indexWorkspace($workspaceName) {
-		foreach ($this->calculateDimensionCombinations() as $combination) {
+		foreach ($this->nodeIndexer->calculateDimensionCombinations() as $combination) {
 			$context = $this->contextFactory->create(array('workspaceName' => $workspaceName, 'dimensions' => $combination));
 			$rootNode = $context->getRootNode();
 
@@ -93,7 +93,7 @@ class NodeIndexCommandController extends CommandController {
 	 * @param \TYPO3\TYPO3CR\Domain\Model\Node $currentNode
 	 */
 	protected function traverseNodes(\TYPO3\TYPO3CR\Domain\Model\Node $currentNode) {
-		$this->nodeIndexer->indexNode($currentNode);
+		$this->nodeIndexer->indexNode($currentNode, NULL, FALSE);
 		$this->indexedNodes++;
 		foreach ($currentNode->getChildNodes() as $childNode) {
 			$this->traverseNodes($childNode);
@@ -101,39 +101,27 @@ class NodeIndexCommandController extends CommandController {
 	}
 
 	/**
-	 * @return array
+	 * Clears the node index from all data.
+	 *
+	 * @param boolean $confirmation Should be set to true for something to actually happen.
 	 */
-	protected function calculateDimensionCombinations() {
-		$dimensionPresets = $this->contentDimensionPresetSource->getAllPresets();
-
-		$dimensionValueCountByDimension = array();
-		$possibleCombinationCount = 1;
-		$combinations = array();
-
-		foreach ($dimensionPresets as $dimensionName => $dimensionPreset) {
-			if (isset($dimensionPreset['presets']) && !empty($dimensionPreset['presets'])) {
-				$dimensionValueCountByDimension[$dimensionName] = count($dimensionPreset['presets']);
-				$possibleCombinationCount = $possibleCombinationCount * $dimensionValueCountByDimension[$dimensionName];
-			}
+	public function flushCommand($confirmation = FALSE) {
+		if ($confirmation) {
+			$this->indexClient->flush();
+			$this->outputLine('The node index was flushed.');
 		}
-
-		foreach ($dimensionPresets as $dimensionName => $dimensionPreset) {
-			for ($i = 0; $i < $possibleCombinationCount; $i++) {
-				if (!isset($combinations[$i]) || !is_array($combinations[$i])) {
-					$combinations[$i] = array();
-				}
-
-				$currentDimensionCurrentPreset = current($dimensionPresets[$dimensionName]['presets']);
-				$combinations[$i][$dimensionName] = $currentDimensionCurrentPreset['values'];
-
-				if (!next($dimensionPresets[$dimensionName]['presets'])) {
-					reset($dimensionPresets[$dimensionName]['presets']);
-				}
-			}
-		}
-
-		return $combinations;
 	}
+
+	/**
+	 * Optimize the search index. Depends on the underlaying technology what will happen.
+	 * For sqlite the VACUUM command is sent to rebuild the full database file.
+	 */
+	public function optimizeCommand() {
+		$this->outputLine('Starting optimization, do not interrupt or your index may be corrupted...');
+		$this->indexClient->optimize();
+		$this->outputLine('Optimization finished.');
+	}
+
 
 	/**
 	 * Utility to check the content of the index.

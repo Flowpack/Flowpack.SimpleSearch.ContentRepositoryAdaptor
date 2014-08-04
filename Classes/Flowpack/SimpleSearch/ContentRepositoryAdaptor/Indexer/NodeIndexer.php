@@ -3,6 +3,7 @@ namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer;
 
 use TYPO3\Flow\Annotations as Flow;
 use TYPO3\TYPO3CR\Domain\Model\Node;
+use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
 use TYPO3\TYPO3CR\Domain\Service\NodeTypeManager;
 
 
@@ -30,6 +31,24 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 	 * @var NodeTypeManager
 	 */
 	protected $nodeTypeManager;
+
+	/**
+	 * @Flow\Inject
+	 * @var \TYPO3\Neos\Domain\Service\ContentDimensionPresetSourceInterface
+	 */
+	protected $contentDimensionPresetSource;
+
+	/**
+	 * @Flow\Inject
+	 * @var \TYPO3\TYPO3CR\Domain\Repository\WorkspaceRepository
+	 */
+	protected $workspaceRepository;
+
+	/**
+	 * @Flow\Inject
+	 * @var \TYPO3\TYPO3CR\Domain\Service\ContextFactoryInterface
+	 */
+	protected $contextFactory;
 
 	/**
 	 * the default context variables available inside Eel
@@ -69,11 +88,17 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 	 * index this node, and add it to the current bulk request.
 	 *
 	 * @param Node $node
-	 * @param null $targetWorkspace
+	 * @param string $targetWorkspaceName
+	 * @param boolean $indexVariants
 	 * @return void
 	 */
-	public function indexNode(Node $node, $targetWorkspace = NULL) {
-		$identifier = $this->generateUniqueNodeIdentifier($node);
+	public function indexNode(Node $node, $targetWorkspaceName = NULL, $indexVariants = TRUE) {
+		if ($indexVariants === TRUE) {
+			$this->indexAllNodeVariants($node);
+			return;
+		}
+
+		$identifier = $this->generateUniqueNodeIdentifier($node, $targetWorkspaceName);
 
 		if ($node->isRemoved()) {
 			$this->indexClient->removeData($identifier);
@@ -91,12 +116,12 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 	}
 
 	/**
-	 * @param Node $nodeData
+	 * @param Node $node
 	 * @return void
 	 */
-	public function removeNode(Node $nodeData) {
-		$persistenceObjectIdentifier = $this->persistenceManager->getIdentifierByObject($nodeData);
-		$this->indexClient->removeData($persistenceObjectIdentifier);
+	public function removeNode(Node $node) {
+		$identifier = $this->generateUniqueNodeIdentifier($node);
+		$this->indexClient->removeData($identifier);
 	}
 
 	/**
@@ -104,6 +129,37 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 	 */
 	public function flush() {
 		// no operation, just here to fullfill the interface.
+	}
+
+	/**
+	 * @param NodeInterface $node
+	 * @return void
+	 */
+	protected function indexAllNodeVariants(NodeInterface $node) {
+		$nodeIdentifier = $node->getIdentifier();
+
+		// FIXME: This is rather ugly, the indexClient or ContentRepositoryAdaptor should have a method to do that.
+		$allIndexedVariants = $this->indexClient->query('SELECT __identifier__ FROM objects WHERE __identifier = "' . $nodeIdentifier . '"');
+		foreach ($allIndexedVariants as $nodeVariant) {
+			$this->indexClient->removeData($nodeVariant['__identifier__']);
+		}
+
+		foreach ($this->workspaceRepository->findAll() as $workspace) {
+			$this->indexNodeInWorkspace($nodeIdentifier, $workspace->getName());
+		}
+	}
+
+	/**
+	 * @param string $workspaceName
+	 */
+	protected function indexNodeInWorkspace($nodeIdentifier, $workspaceName) {
+		foreach ($this->calculateDimensionCombinations() as $combination) {
+			$context = $this->contextFactory->create(array('workspaceName' => $workspaceName, 'dimensions' => $combination));
+			$node = $context->getNodeByIdentifier($nodeIdentifier);
+			if ($node !== NULL) {
+				$this->indexNode($node, NULL, FALSE);
+			}
+		}
 	}
 
 	/**
@@ -143,10 +199,50 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 	 * Generate identifier for index entry based on node identifier and context
 	 *
 	 * @param Node $node
+	 * @param string $targetWorkspaceName
 	 * @return string
 	 */
-	protected function generateUniqueNodeIdentifier(Node $node) {
-		return md5($node->getContextPath());
+	protected function generateUniqueNodeIdentifier(Node $node, $targetWorkspaceName = NULL) {
+		$contextPath = $node->getContextPath();
+		if ($targetWorkspaceName !== NULL) {
+			$contextPath = str_replace($node->getContext()->getWorkspace()->getName(), $targetWorkspaceName, $contextPath);
+		}
+		return md5($contextPath);
+	}
+
+	/**
+	 * @return array
+	 */
+	public function calculateDimensionCombinations() {
+		$dimensionPresets = $this->contentDimensionPresetSource->getAllPresets();
+
+		$dimensionValueCountByDimension = array();
+		$possibleCombinationCount = 1;
+		$combinations = array();
+
+		foreach ($dimensionPresets as $dimensionName => $dimensionPreset) {
+			if (isset($dimensionPreset['presets']) && !empty($dimensionPreset['presets'])) {
+				$dimensionValueCountByDimension[$dimensionName] = count($dimensionPreset['presets']);
+				$possibleCombinationCount = $possibleCombinationCount * $dimensionValueCountByDimension[$dimensionName];
+			}
+		}
+
+		foreach ($dimensionPresets as $dimensionName => $dimensionPreset) {
+			for ($i = 0; $i < $possibleCombinationCount; $i++) {
+				if (!isset($combinations[$i]) || !is_array($combinations[$i])) {
+					$combinations[$i] = array();
+				}
+
+				$currentDimensionCurrentPreset = current($dimensionPresets[$dimensionName]['presets']);
+				$combinations[$i][$dimensionName] = $currentDimensionCurrentPreset['values'];
+
+				if (!next($dimensionPresets[$dimensionName]['presets'])) {
+					reset($dimensionPresets[$dimensionName]['presets']);
+				}
+			}
+		}
+
+		return $combinations;
 	}
 
 }
