@@ -156,9 +156,8 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 		if ($propertyValue instanceof NodeInterface) {
 			$propertyValue = $propertyValue->getIdentifier();
 		}
-		$this->where[] = "(" . $propertyName . " LIKE '%" . $propertyValue . "%')";
 
-		return $this;
+		return parent::like($propertyName, $propertyValue);
 	}
 
 	/**
