@@ -25,11 +25,6 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	/**
 	 * @var integer
 	 */
-	protected $requestedResults;
-
-	/**
-	 * @var integer
-	 */
 	protected $from;
 
 	/**
@@ -66,8 +61,8 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	 */
 	public function query(NodeInterface $contextNode) {
 		$this->where[] = "(__parentPath LIKE '%#" . $contextNode->getPath() . "#%' OR __path LIKE '" . $contextNode->getPath() . "')";
-		$this->where[] = "(__workspace IN ('live', '" . $contextNode->getContext()->getWorkspace()->getName() . "'))";
-		//$this->where[] = "(__dimensionshash LIKE '" . $contextNode->getNodeData()->getDimensionsHash() . "')";
+		$this->where[] = "(__workspace LIKE '" . $contextNode->getContext()->getWorkspace()->getName() . "')";
+		$this->where[] = "(__dimensionshash LIKE '" . md5(json_encode($contextNode->getContext()->getDimensions())) . "')";
 		$this->contextNode = $contextNode;
 
 		return $this;
@@ -103,15 +98,7 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 			return $this;
 		}
 
-		$currentWorkspaceNestingLevel = 1;
-		$workspace = $this->contextNode->getContext()->getWorkspace();
-		while ($workspace->getBaseWorkspace() !== NULL) {
-			$currentWorkspaceNestingLevel++;
-			$workspace = $workspace->getBaseWorkspace();
-		}
-
-		$this->requestedResults = $limit;
-		$this->limit = $limit * $currentWorkspaceNestingLevel;
+		$this->limit = $limit;
 
 		return $this;
 	}
@@ -188,7 +175,7 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 			}
 		}
 
-		return array_slice(array_values($nodes), ($this->from ?: 0), ($this->requestedResults ?: NULL));
+		return array_values($nodes);
 	}
 
 	/**
