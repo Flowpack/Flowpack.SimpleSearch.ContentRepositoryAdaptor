@@ -1,10 +1,13 @@
 TYPO3:
   TYPO3CR:
     Search:
+      defaultConfigurationPerType:
         date:
           indexing: "${(value ? value.format('U') : null)}"
         references:
           indexing: "${'#' + Array.join(Indexing.convertArrayOfNodesToArrayOfNodeIdentifiers(value), '#') + '#'}"
+      defaultContext:
+        Json: TYPO3\Eel\Helper\JsonHelper
   Neos:
     typoScript:
       autoInclude:
