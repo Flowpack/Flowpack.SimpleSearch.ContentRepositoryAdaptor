@@ -62,6 +62,8 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 	 */
 	protected $fulltextRootNodeTypes = array();
 
+	protected $indexedNodeData = array();
+
 	/**
 	 * Called by the Flow object framework after creating the object and resolving all dependencies.
 	 *
@@ -97,8 +99,10 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 			$this->indexAllNodeVariants($node);
 			return;
 		}
+		$nodeDataPersistenceIdentifier = $this->persistenceManager->getIdentifierByObject($node->getNodeData());
 
-		$identifier = $this->generateUniqueNodeIdentifier($node, $targetWorkspaceName);
+		$identifier = $nodeDataPersistenceIdentifier;
+		// $this->generateUniqueNodeIdentifier($node, $targetWorkspaceName);
 
 		if ($node->isRemoved()) {
 			$this->indexClient->removeData($identifier);
@@ -107,12 +111,22 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 
 		$fulltextData = array();
 
-		$nodePropertiesToBeStoredInIndex = $this->extractPropertiesAndFulltext($node, $fulltextData);
-		if (!(count($fulltextData) === 0 || (count($fulltextData) === 1 && $fulltextData['text'] === ''))) {
-			$this->addFulltextToRoot($node, $fulltextData);
-		}
+		if (isset($this->indexedNodeData[$nodeDataPersistenceIdentifier])) {
+			$resultArray = $this->indexClient->query('SELECT * FROM objects WHERE __identifier__ = "' . $nodeDataPersistenceIdentifier . '" LIMIT 1');
+			$properties = $resultArray[0];
+			$properties['__workspace'] = $properties['__workspace'] . ', #' . ($targetWorkspaceName !== NULL ? $targetWorkspaceName : $node->getContext()->getWorkspaceName() ) . '#';
+			$properties['__dimensionshash'] = $properties['__dimensionshash'] . ', #' . md5(json_encode($node->getContext()->getDimensions())) . '#';
 
-		$this->indexClient->indexData($identifier, $nodePropertiesToBeStoredInIndex, $fulltextData);
+			$this->indexClient->insertOrUpdatePropertiesToIndex($properties, $identifier);
+		} else {
+			$nodePropertiesToBeStoredInIndex = $this->extractPropertiesAndFulltext($node, $fulltextData);
+			if (!(count($fulltextData) === 0 || (count($fulltextData) === 1 && $fulltextData['text'] === ''))) {
+				$this->addFulltextToRoot($node, $fulltextData);
+			}
+
+			$this->indexClient->indexData($identifier, $nodePropertiesToBeStoredInIndex, $fulltextData);
+			$this->indexedNodeData[$nodeDataPersistenceIdentifier] = $nodeDataPersistenceIdentifier;
+		}
 	}
 
 	/**

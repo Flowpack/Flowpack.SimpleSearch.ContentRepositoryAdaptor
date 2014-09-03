@@ -7,7 +7,7 @@
 
     '__workspace':
       search:
-        indexing: "${node.context.workspace.name}"
+        indexing: "${'#' + node.context.workspace.name + '#'}"
 
     '__path':
       search:
@@ -35,7 +35,7 @@
         indexing: "${'#' + Array.join(Indexing.extractNodeTypeNamesAndSupertypes(node.nodeType), '#') + '#'}"
     '__dimensionshash':
       search:
-        indexing: "${String.md5(Json.stringify(node.context.dimensions))}"
+        indexing: "${'#' + String.md5(Json.stringify(node.context.dimensions)) + '#'}"
 
 'unstructured': *node
 
