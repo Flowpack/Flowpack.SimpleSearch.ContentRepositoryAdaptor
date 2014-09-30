@@ -43,7 +43,7 @@
   properties:
     '_hidden':
       search:
-        indexing: "${node.isHidden()}"
+        indexing: "${node.hidden}"
 
 'TYPO3.Neos:Timable':
   properties:

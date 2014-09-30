@@ -34,7 +34,7 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 
 	/**
 	 * @Flow\Inject
-	 * @var \TYPO3\Neos\Domain\Service\ContentDimensionPresetSourceInterface
+	 * @var \TYPO3\TYPO3CR\Domain\Service\ContentDimensionPresetSourceInterface
 	 */
 	protected $contentDimensionPresetSource;
 
