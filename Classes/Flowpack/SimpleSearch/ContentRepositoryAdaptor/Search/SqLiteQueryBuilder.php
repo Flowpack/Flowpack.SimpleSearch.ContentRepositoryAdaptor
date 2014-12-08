@@ -133,6 +133,21 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	}
 
 	/**
+	 * add an like query for a given property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @return QueryBuilder
+	 */
+	public function like($propertyName, $propertyValue) {
+		if ($propertyValue instanceof NodeInterface) {
+			$propertyValue = $propertyValue->getIdentifier();
+		}
+
+		return parent::like($propertyName, $propertyValue);
+	}
+
+	/**
 	 * Execute the query and return the list of nodes as result
 	 *
 	 * @return array<\TYPO3\TYPO3CR\Domain\Model\NodeInterface>
