@@ -70,7 +70,7 @@ class NodeIndexCommandController extends CommandController {
 				$this->indexWorkspace($workspace->getName());
 			}
 		} else {
-			$this->indexWorkspace($workspace->getName());
+			$this->indexWorkspace($workspace);
 		}
 		$this->outputLine('Finished indexing.');
 	}
