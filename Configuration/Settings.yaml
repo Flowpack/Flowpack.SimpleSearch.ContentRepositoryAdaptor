@@ -3,7 +3,7 @@ TYPO3:
     Search:
       defaultConfigurationPerType:
         date:
-          indexing: "${(value ? value.format('U') : null)}"
+          indexing: "${(value ? Date.format(value, 'U') : null)}"
         references:
           indexing: "${'#' + Array.join(Indexing.convertArrayOfNodesToArrayOfNodeIdentifiers(value), '#') + '#'}"
       defaultContext:

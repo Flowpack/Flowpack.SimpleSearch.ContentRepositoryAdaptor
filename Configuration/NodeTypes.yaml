@@ -49,11 +49,11 @@
   properties:
     '_hiddenBeforeDateTime':
       search:
-        indexing: "${(node.hiddenBeforeDateTime ? node.hiddenBeforeDateTime.format('U') : null)}"
+        indexing: "${(node.hiddenBeforeDateTime ? Date.format(node.hiddenBeforeDateTime, 'U') : null)}"
 
     '_hiddenAfterDateTime':
       search:
-        indexing: "${(node.hiddenAfterDateTime ? node.hiddenAfterDateTime.format('U') : null)}"
+        indexing: "${(node.hiddenAfterDateTime ? Date.format(node.hiddenAfterDateTime, 'U') : null)}"
 
 'TYPO3.Neos.NodeTypes:Text':
   search:
