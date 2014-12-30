@@ -2,8 +2,6 @@ TYPO3:
   TYPO3CR:
     Search:
       defaultConfigurationPerType:
-        date:
-          indexing: "${(value ? Date.format(value, 'U') : null)}"
         references:
           indexing: "${'#' + Array.join(Indexing.convertArrayOfNodesToArrayOfNodeIdentifiers(value), '#') + '#'}"
       defaultContext:
