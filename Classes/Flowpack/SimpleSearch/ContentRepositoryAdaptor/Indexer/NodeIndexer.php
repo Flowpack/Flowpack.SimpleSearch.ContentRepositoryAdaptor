@@ -120,7 +120,7 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 			$this->indexClient->insertOrUpdatePropertiesToIndex($properties, $identifier);
 		} else {
 			$nodePropertiesToBeStoredInIndex = $this->extractPropertiesAndFulltext($node, $fulltextData);
-			if (!(count($fulltextData) === 0 || (count($fulltextData) === 1 && $fulltextData['text'] === ''))) {
+			if (count($fulltextData) !== 0) {
 				$this->addFulltextToRoot($node, $fulltextData);
 			}
 
