@@ -99,10 +99,8 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 			$this->indexAllNodeVariants($node);
 			return;
 		}
-		$nodeDataPersistenceIdentifier = $this->persistenceManager->getIdentifierByObject($node->getNodeData());
 
-		$identifier = $nodeDataPersistenceIdentifier;
-		// $this->generateUniqueNodeIdentifier($node, $targetWorkspaceName);
+		$identifier = $this->generateUniqueNodeIdentifier($node);
 
 		if ($node->isRemoved()) {
 			$this->indexClient->removeData($identifier);
@@ -111,8 +109,8 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 
 		$fulltextData = array();
 
-		if (isset($this->indexedNodeData[$nodeDataPersistenceIdentifier])) {
-			$resultArray = $this->indexClient->query('SELECT * FROM objects WHERE __identifier__ = "' . $nodeDataPersistenceIdentifier . '" LIMIT 1');
+		if (isset($this->indexedNodeData[$identifier])) {
+			$resultArray = $this->indexClient->query('SELECT * FROM objects WHERE __identifier__ = "' . $identifier . '" LIMIT 1');
 			$properties = $resultArray[0];
 			$properties['__workspace'] = $properties['__workspace'] . ', #' . ($targetWorkspaceName !== NULL ? $targetWorkspaceName : $node->getContext()->getWorkspaceName() ) . '#';
 			$properties['__dimensionshash'] = $properties['__dimensionshash'] . ', #' . md5(json_encode($node->getContext()->getDimensions())) . '#';
@@ -125,7 +123,7 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 			}
 
 			$this->indexClient->indexData($identifier, $nodePropertiesToBeStoredInIndex, $fulltextData);
-			$this->indexedNodeData[$nodeDataPersistenceIdentifier] = $nodeDataPersistenceIdentifier;
+			$this->indexedNodeData[$identifier] = $identifier;
 		}
 	}
 
@@ -222,15 +220,11 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 	 * Generate identifier for index entry based on node identifier and context
 	 *
 	 * @param Node $node
-	 * @param string $targetWorkspaceName
 	 * @return string
 	 */
-	protected function generateUniqueNodeIdentifier(Node $node, $targetWorkspaceName = NULL) {
-		$contextPath = $node->getContextPath();
-		if ($targetWorkspaceName !== NULL) {
-			$contextPath = str_replace($node->getContext()->getWorkspace()->getName(), $targetWorkspaceName, $contextPath);
-		}
-		return md5($contextPath);
+	protected function generateUniqueNodeIdentifier(Node $node) {
+		$nodeDataPersistenceIdentifier = $this->persistenceManager->getIdentifierByObject($node->getNodeData());
+		return $nodeDataPersistenceIdentifier;
 	}
 
 	/**
