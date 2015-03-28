@@ -2,7 +2,6 @@
 namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer;
 
 use TYPO3\Flow\Annotations as Flow;
-use TYPO3\TYPO3CR\Domain\Model\Node;
 use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
 use TYPO3\TYPO3CR\Domain\Service\NodeTypeManager;
 
@@ -89,12 +88,12 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 	/**
 	 * index this node, and add it to the current bulk request.
 	 *
-	 * @param Node $node
+	 * @param NodeInterface $node
 	 * @param string $targetWorkspaceName
 	 * @param boolean $indexVariants
 	 * @return void
 	 */
-	public function indexNode(Node $node, $targetWorkspaceName = NULL, $indexVariants = TRUE) {
+	public function indexNode(NodeInterface $node, $targetWorkspaceName = NULL, $indexVariants = TRUE) {
 		if ($indexVariants === TRUE) {
 			$this->indexAllNodeVariants($node);
 			return;
@@ -128,10 +127,10 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 	}
 
 	/**
-	 * @param Node $node
+	 * @param NodeInterface $node
 	 * @return void
 	 */
-	public function removeNode(Node $node) {
+	public function removeNode(NodeInterface $node) {
 		$identifier = $this->generateUniqueNodeIdentifier($node);
 		$this->indexClient->removeData($identifier);
 	}
@@ -184,10 +183,10 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 	}
 
 	/**
-	 * @param Node $node
+	 * @param NodeInterface $node
 	 * @param array $fulltext
 	 */
-	protected function addFulltextToRoot(Node $node, $fulltext) {
+	protected function addFulltextToRoot(NodeInterface $node, $fulltext) {
 		$fulltextRoot = $this->findFulltextRoot($node);
 		if ($fulltextRoot !== NULL) {
 			$identifier = $this->generateUniqueNodeIdentifier($fulltextRoot);
@@ -196,10 +195,10 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 	}
 
 	/**
-	 * @param Node $node
-	 * @return \TYPO3\TYPO3CR\Domain\Model\NodeInterface
+	 * @param NodeInterface $node
+	 * @return NodeInterface
 	 */
-	protected function findFulltextRoot(Node $node) {
+	protected function findFulltextRoot(NodeInterface $node) {
 		if (in_array($node->getNodeType()->getName(), $this->fulltextRootNodeTypes)) {
 			return NULL;
 		}
@@ -219,10 +218,10 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 	/**
 	 * Generate identifier for index entry based on node identifier and context
 	 *
-	 * @param Node $node
+	 * @param NodeInterface $node
 	 * @return string
 	 */
-	protected function generateUniqueNodeIdentifier(Node $node) {
+	protected function generateUniqueNodeIdentifier(NodeInterface $node) {
 		$nodeDataPersistenceIdentifier = $this->persistenceManager->getIdentifierByObject($node->getNodeData());
 		return $nodeDataPersistenceIdentifier;
 	}
