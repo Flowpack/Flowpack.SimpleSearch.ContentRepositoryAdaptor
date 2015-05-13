@@ -23,11 +23,6 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	protected $contextNode;
 
 	/**
-	 * @var integer
-	 */
-	protected $from;
-
-	/**
 	 * Sorting strings
 	 *
 	 * @var array<string>
@@ -53,7 +48,7 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	 *
 	 * @var boolean
 	 */
-	protected $logThisQuery = FALSE;
+	protected $queryLogEnabled = FALSE;
 
 	/**
 	 * @param NodeInterface $contextNode
@@ -80,39 +75,6 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	 */
 	public function nodeType($nodeType) {
 		$this->where[] = "(__typeAndSuperTypes LIKE '%#" . $nodeType . "#%')";
-
-		return $this;
-	}
-
-	/**
-	 * output only $limit records
-	 *
-	 * Internally, we fetch $limit*$workspaceNestingLevel records, because we fetch the *conjunction* of all workspaces;
-	 * and then we filter after execution when we have found the right number of results.
-	 *
-	 * @param integer $limit
-	 * @return QueryBuilder
-	 */
-	public function limit($limit) {
-		if (!$limit) {
-			return $this;
-		}
-
-		$this->limit = $limit;
-
-		return $this;
-	}
-
-	/**
-	 * @param integer $from
-	 * @return QueryBuilder
-	 */
-	public function from($from) {
-		if (!$from) {
-			return $this;
-		}
-
-		$this->from = intval($from);
 
 		return $this;
 	}
@@ -153,13 +115,15 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	 * @return array<\TYPO3\TYPO3CR\Domain\Model\NodeInterface>
 	 */
 	public function execute() {
+		// Adding implicit sorting by __sortIndex (as last fallback) as we can expect it to be there for nodes.
+		$this->sorting[] = 'objects.__sortIndex ASC';
+
 		$timeBefore = microtime(TRUE);
-		$query = $this->buildQueryString();
-		$result = $this->indexClient->query($query);
+		$result = parent::execute();
 		$timeAfterwards = microtime(TRUE);
 
-		if ($this->logThisQuery === TRUE) {
-			$this->logger->log('Query Log (' . $this->logMessage . '): ' . $query . ' -- execution time: ' . (($timeAfterwards - $timeBefore) * 1000) . ' ms -- Total Results: ' . count($result), LOG_DEBUG);
+		if ($this->queryLogEnabled === TRUE) {
+			$this->logger->log('Query Log (' . $this->logMessage . '): -- execution time: ' . (($timeAfterwards - $timeBefore) * 1000) . ' ms -- Total Results: ' . count($result), LOG_DEBUG);
 		}
 
 		if (empty($result)) {
@@ -185,7 +149,7 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	 * @return $this
 	 */
 	public function log($message = NULL) {
-		$this->logThisQuery = TRUE;
+		$this->queryLogEnabled = TRUE;
 		$this->logMessage = $message;
 
 		return $this;
@@ -198,14 +162,11 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	 */
 	public function count() {
 		$timeBefore = microtime(TRUE);
-		$query = $this->buildQueryString();
-		$result = $this->indexClient->query($query);
+		$count = parent::count();
 		$timeAfterwards = microtime(TRUE);
 
-		$count = count($result);
-
-		if ($this->logThisQuery === TRUE) {
-			$this->logger->log('Query Log (' . $this->logMessage . '): ' . $query . ' -- execution time: ' . (($timeAfterwards - $timeBefore) * 1000) . ' ms -- Total Results: ' . $count, LOG_DEBUG);
+		if ($this->queryLogEnabled === TRUE) {
+			$this->logger->log('Query Log (' . $this->logMessage . '): -- execution time: ' . (($timeAfterwards - $timeBefore) * 1000) . ' ms -- Total Results: ' . $count, LOG_DEBUG);
 		}
 
 		return $count;
