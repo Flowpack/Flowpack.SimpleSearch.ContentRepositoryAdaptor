@@ -140,7 +140,7 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 	 * @return void
 	 */
 	public function flush() {
-		// no operation, just here to fullfill the interface.
+		$this->indexedNodeData = array();
 	}
 
 	/**
