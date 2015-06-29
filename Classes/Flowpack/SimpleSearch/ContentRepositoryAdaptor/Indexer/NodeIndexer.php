@@ -150,7 +150,6 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 	protected function indexAllNodeVariants(NodeInterface $node) {
 		$nodeIdentifier = $node->getIdentifier();
 
-		// FIXME: This is rather ugly, the indexClient or ContentRepositoryAdaptor should have a method to do that.
 		$allIndexedVariants = $this->indexClient->query('SELECT __identifier__ FROM objects WHERE __identifier = "' . $nodeIdentifier . '"');
 		foreach ($allIndexedVariants as $nodeVariant) {
 			$this->indexClient->removeData($nodeVariant['__identifier__']);

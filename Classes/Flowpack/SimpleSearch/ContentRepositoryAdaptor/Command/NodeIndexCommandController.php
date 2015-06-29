@@ -140,9 +140,7 @@ class NodeIndexCommandController extends CommandController {
 	 */
 	public function findCommand($queryString) {
 		$result = $this->indexClient->query($queryString);
-		foreach ($result as $hit) {
-			var_dump($hit);
-		}
+		$this->output->outputTable($result);
 	}
 
 }
