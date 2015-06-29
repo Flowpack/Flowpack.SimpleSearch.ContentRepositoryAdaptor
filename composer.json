@@ -1,12 +1,12 @@
 {
     "name": "flowpack/simplesearch-contentrepositoryadaptor",
     "type": "typo3-flow-package",
-    "description": "Implement search specific for the TYPO3CR",
+    "description": "Implements a bridge to search in TYPO3CR via the flowpack/simplesearch package.",
     "license": "MIT",
     "require": {
         "typo3/typo3cr": "*",
         "typo3/flow": "*",
-        "flowpack/simplesearch": "*",
+        "flowpack/simplesearch": "^1.3",
         "typo3/typo3cr-search": "*",
         "typo3/neos": "*"
     },
