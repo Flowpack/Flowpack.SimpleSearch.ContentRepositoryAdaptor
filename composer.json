@@ -6,8 +6,8 @@
     "require": {
         "typo3/typo3cr": "*",
         "typo3/flow": "*",
-        "flowpack/simplesearch": "*",
-        "typo3/typo3cr-search": "*",
+        "flowpack/simplesearch": "1.2.*",
+        "typo3/typo3cr-search": "1.2.*",
         "typo3/neos": "*"
     },
     "autoload": {
