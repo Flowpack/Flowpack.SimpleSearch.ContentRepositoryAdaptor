@@ -50,6 +50,12 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 	protected $contextFactory;
 
 	/**
+	 * @Flow\Inject
+	 * @var \TYPO3\Flow\Security\Context
+	 */
+	protected $securityContext;
+
+	/**
 	 * the default context variables available inside Eel
 	 *
 	 * @var array
@@ -162,22 +168,25 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 	 * @param string $workspaceName
 	 */
 	protected function indexNodeInWorkspace($nodeIdentifier, $workspaceName) {
-		$dimensionCombinations = $this->calculateDimensionCombinations();
-		if ($dimensionCombinations !== array()) {
-			foreach ($dimensionCombinations as $combination) {
-				$context = $this->contextFactory->create(array('workspaceName' => $workspaceName, 'dimensions' => $combination));
+		$indexer = $this;
+		$this->securityContext->withoutAuthorizationChecks(function() use ($indexer, $nodeIdentifier, $workspaceName) {
+			$dimensionCombinations = $indexer->calculateDimensionCombinations();
+			if ($dimensionCombinations !== array()) {
+				foreach ($dimensionCombinations as $combination) {
+					$context = $indexer->contextFactory->create(array('workspaceName' => $workspaceName, 'dimensions' => $combination));
+					$node = $context->getNodeByIdentifier($nodeIdentifier);
+					if ($node !== NULL) {
+						$indexer->indexNode($node, NULL, FALSE);
+					}
+				}
+			} else {
+				$context = $indexer->contextFactory->create(array('workspaceName' => $workspaceName));
 				$node = $context->getNodeByIdentifier($nodeIdentifier);
 				if ($node !== NULL) {
-					$this->indexNode($node, NULL, FALSE);
+					$indexer->indexNode($node, NULL, FALSE);
 				}
 			}
-		} else {
-			$context = $this->contextFactory->create(array('workspaceName' => $workspaceName));
-			$node = $context->getNodeByIdentifier($nodeIdentifier);
-			if ($node !== NULL) {
-				$this->indexNode($node, NULL, FALSE);
-			}
-		}
+		});
 	}
 
 	/**
