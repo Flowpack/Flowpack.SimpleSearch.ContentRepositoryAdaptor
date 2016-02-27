@@ -1,3 +1,6 @@
+[![SensioLabs Insight](https://insight.sensiolabs.com/projects/f65658fd-394a-4cd3-8c7b-639680eb4404/small.png)](https://insight.sensiolabs.com/projects/f65658fd-394a-4cd3-8c7b-639680eb4404)
+[![Code Climate](https://codeclimate.com/github/kitsunet/Flowpack.SimpleSearch.ContentRepositoryAdaptor/badges/gpa.svg)](https://codeclimate.com/github/kitsunet/Flowpack.SimpleSearch.ContentRepositoryAdaptor)
+
 SimpleSearch ContentRepositoryAdaptor
 ==============================================
 
