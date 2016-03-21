@@ -85,7 +85,8 @@
 
 
 'Flowpack.SimpleSearch.ContentRepositoryAdaptor:Search':
-  superTypes: ['TYPO3.Neos:Content']
+  superTypes:
+    'TYPO3.Neos:Content': true
   ui:
     label: 'Search'
     icon: 'icon-search'
