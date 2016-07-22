@@ -110,6 +110,22 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	}
 
 	/**
+	 * add a greater than query for a given datetime property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @param string $format
+	 * @return QueryBuilder
+	 */
+	public function greaterThanDatetime($propertyName, $propertyValue, $format = '%Y-%m-%d %H:%M:%S') {
+		if ($propertyValue instanceof NodeInterface) {
+			$propertyValue = $propertyValue->getIdentifier();
+		}
+
+		return parent::greaterThanDatetime($propertyName, $propertyValue, $format);
+	}
+
+	/**
 	 * Execute the query and return the list of nodes as result
 	 *
 	 * @return array<\TYPO3\TYPO3CR\Domain\Model\NodeInterface>
