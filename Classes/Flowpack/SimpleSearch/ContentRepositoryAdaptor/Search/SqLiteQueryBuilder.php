@@ -110,19 +110,67 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	}
 
 	/**
-	 * add a greater than query for a given datetime property
+	 * add a greater than query for a given property
 	 *
 	 * @param $propertyName
 	 * @param $propertyValue
 	 * @param string $format
 	 * @return QueryBuilder
 	 */
-	public function greaterThanDatetime($propertyName, $propertyValue, $format = '%Y-%m-%d %H:%M:%S') {
+	public function greaterThan($propertyName, $propertyValue) {
 		if ($propertyValue instanceof NodeInterface) {
 			$propertyValue = $propertyValue->getIdentifier();
 		}
 
-		return parent::greaterThanDatetime($propertyName, $propertyValue, $format);
+		return parent::greaterThan($propertyName, $propertyValue);
+	}
+
+	/**
+	 * add a greater than or equal query for a given property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @param string $format
+	 * @return QueryBuilder
+	 */
+	public function greaterThanOrEqual($propertyName, $propertyValue) {
+		if ($propertyValue instanceof NodeInterface) {
+			$propertyValue = $propertyValue->getIdentifier();
+		}
+
+		return parent::greaterThanOrEqual($propertyName, $propertyValue);
+	}
+
+	/**
+	 * add a less than query for a given property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @param string $format
+	 * @return QueryBuilder
+	 */
+	public function lessThan($propertyName, $propertyValue) {
+		if ($propertyValue instanceof NodeInterface) {
+			$propertyValue = $propertyValue->getIdentifier();
+		}
+
+		return parent::lessThan($propertyName, $propertyValue);
+	}
+
+	/**
+	 * add a less than query for a given property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @param string $format
+	 * @return QueryBuilder
+	 */
+	public function lessThanOrEqual($propertyName, $propertyValue) {
+		if ($propertyValue instanceof NodeInterface) {
+			$propertyValue = $propertyValue->getIdentifier();
+		}
+
+		return parent::lessThanOrEqual($propertyName, $propertyValue);
 	}
 
 	/**
