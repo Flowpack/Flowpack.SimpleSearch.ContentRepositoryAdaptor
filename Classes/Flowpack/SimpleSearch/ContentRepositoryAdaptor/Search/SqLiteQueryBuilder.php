@@ -1,7 +1,7 @@
 <?php
 namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search;
 
-use TYPO3\Flow\Annotations as Flow;
+use Neos\Flow\Annotations as Flow;
 use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
 
 /**
@@ -11,7 +11,7 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 
 	/**
 	 * @Flow\Inject
-	 * @var \TYPO3\Flow\Log\SystemLoggerInterface
+	 * @var \Neos\Flow\Log\SystemLoggerInterface
 	 */
 	protected $logger;
 
