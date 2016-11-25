@@ -1,92 +1,103 @@
 
-'TYPO3.Neos:Node': &node
+'TYPO3.Neos:Node':
   properties:
-    '__identifier':
+    __identifier:
       search:
-        indexing: "${node.identifier}"
-
-    '__workspace':
+        indexing: '${node.identifier}'
+    __workspace:
       search:
-        indexing: "${'#' + node.context.workspace.name + '#'}"
-
-    '__path':
+        indexing: '${''#'' + node.context.workspace.name + ''#''}'
+    __path:
       search:
-        indexing: "${node.path}"
-
-    '__parentPath':
+        indexing: '${node.path}'
+    __parentPath:
       search:
-        indexing: "${'#' + Array.join(Indexing.buildAllPathPrefixes(node.parentPath), '#') + '#'}"
-
-    '__sortIndex':
+        indexing: '${''#'' + Array.join(Indexing.buildAllPathPrefixes(node.parentPath), ''#'') + ''#''}'
+    __sortIndex:
       search:
-        indexing: "${node.index}"
-
-    '_removed':
+        indexing: '${node.index}'
+    _removed:
       search:
-        # deliberately don't map or index this
         indexing: ''
-
-    '__type':
+    __type:
       search:
-        indexing: "${node.nodeType.name}"
-    # we index the node type INCLUDING ALL SUPERTYPES
-    '__typeAndSupertypes':
+        indexing: '${node.nodeType.name}'
+    __typeAndSupertypes:
       search:
-        indexing: "${'#' + Array.join(Indexing.extractNodeTypeNamesAndSupertypes(node.nodeType), '#') + '#'}"
-    '__dimensionshash':
+        indexing: '${''#'' + Array.join(Indexing.extractNodeTypeNamesAndSupertypes(node.nodeType), ''#'') + ''#''}'
+    __dimensionshash:
       search:
-        indexing: "${'#' + String.md5(Json.stringify(node.context.dimensions)) + '#'}"
-
-'unstructured': *node
-
+        indexing: '${''#'' + String.md5(Json.stringify(node.context.dimensions)) + ''#''}'
+unstructured:
+  properties:
+    __identifier:
+      search:
+        indexing: '${node.identifier}'
+    __workspace:
+      search:
+        indexing: '${''#'' + node.context.workspace.name + ''#''}'
+    __path:
+      search:
+        indexing: '${node.path}'
+    __parentPath:
+      search:
+        indexing: '${''#'' + Array.join(Indexing.buildAllPathPrefixes(node.parentPath), ''#'') + ''#''}'
+    __sortIndex:
+      search:
+        indexing: '${node.index}'
+    _removed:
+      search:
+        indexing: ''
+    __type:
+      search:
+        indexing: '${node.nodeType.name}'
+    __typeAndSupertypes:
+      search:
+        indexing: '${''#'' + Array.join(Indexing.extractNodeTypeNamesAndSupertypes(node.nodeType), ''#'') + ''#''}'
+    __dimensionshash:
+      search:
+        indexing: '${''#'' + String.md5(Json.stringify(node.context.dimensions)) + ''#''}'
 'TYPO3.Neos:Hidable':
   properties:
-    '_hidden':
+    _hidden:
       search:
-        indexing: "${node.hidden}"
-
+        indexing: '${node.hidden}'
 'TYPO3.Neos:Timable':
   properties:
-    '_hiddenBeforeDateTime':
+    _hiddenBeforeDateTime:
       search:
-        indexing: "${(node.hiddenBeforeDateTime ? Date.format(node.hiddenBeforeDateTime, 'U') : null)}"
-
-    '_hiddenAfterDateTime':
+        indexing: '${(node.hiddenBeforeDateTime ? Date.format(node.hiddenBeforeDateTime, ''U'') : null)}'
+    _hiddenAfterDateTime:
       search:
-        indexing: "${(node.hiddenAfterDateTime ? Date.format(node.hiddenAfterDateTime, 'U') : null)}"
-
+        indexing: '${(node.hiddenAfterDateTime ? Date.format(node.hiddenAfterDateTime, ''U'') : null)}'
 'TYPO3.Neos.NodeTypes:Text':
   search:
     fulltext:
-      enable: TRUE
+      enable: true
   properties:
     text:
       search:
-        fulltextExtractor: "${Indexing.extractHtmlTags(node.properties.text)}"
-
+        fulltextExtractor: '${Indexing.extractHtmlTags(node.properties.text)}'
 'TYPO3.Neos.NodeTypes:Headline':
   search:
     fulltext:
-      enable: TRUE
+      enable: true
   properties:
     title:
       search:
-        fulltextExtractor: "${Indexing.extractHtmlTags(node.properties.title)}"
-
+        fulltextExtractor: '${Indexing.extractHtmlTags(node.properties.title)}'
 'TYPO3.Neos:Document':
   search:
     fulltext:
-      isRoot: TRUE
-      enable: TRUE
+      isRoot: true
+      enable: true
   properties:
     title:
       search:
-        fulltextExtractor: "${Indexing.extractHtmlTags(node.properties.title)}"
-
-
+        fulltextExtractor: '${Indexing.extractHtmlTags(node.properties.title)}'
 'Flowpack.SimpleSearch.ContentRepositoryAdaptor:Search':
   superTypes:
-    'TYPO3.Neos:Content': true
+    'TYPO3.Neos:Content': '1'
   ui:
-    label: 'Search'
-    icon: 'icon-search'
+    label: Search
+    icon: icon-search
