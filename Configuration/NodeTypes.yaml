@@ -1,5 +1,5 @@
 
-'TYPO3.Neos:Node':
+'Neos.Neos:Node':
   properties:
     __identifier:
       search:
@@ -57,12 +57,12 @@ unstructured:
     __dimensionshash:
       search:
         indexing: '${''#'' + String.md5(Json.stringify(node.context.dimensions)) + ''#''}'
-'TYPO3.Neos:Hidable':
+'Neos.Neos:Hidable':
   properties:
     _hidden:
       search:
         indexing: '${node.hidden}'
-'TYPO3.Neos:Timable':
+'Neos.Neos:Timable':
   properties:
     _hiddenBeforeDateTime:
       search:
@@ -86,7 +86,7 @@ unstructured:
     title:
       search:
         fulltextExtractor: '${Indexing.extractHtmlTags(node.properties.title)}'
-'TYPO3.Neos:Document':
+'Neos.Neos:Document':
   search:
     fulltext:
       isRoot: true
@@ -97,7 +97,7 @@ unstructured:
         fulltextExtractor: '${Indexing.extractHtmlTags(node.properties.title)}'
 'Flowpack.SimpleSearch.ContentRepositoryAdaptor:Search':
   superTypes:
-    'TYPO3.Neos:Content': true
+    'Neos.Neos:Content': true
   ui:
     label: Search
     icon: icon-search
