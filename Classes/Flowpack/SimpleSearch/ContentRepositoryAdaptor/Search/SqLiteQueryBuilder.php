@@ -7,7 +7,7 @@ use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
 /**
  * Query Builder for Content Repository searches
  */
-class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilder implements \TYPO3\TYPO3CR\Search\Search\QueryBuilderInterface, \TYPO3\Eel\ProtectedContextAwareInterface {
+class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilder implements \TYPO3\TYPO3CR\Search\Search\QueryBuilderInterface, \Neos\Eel\ProtectedContextAwareInterface {
 
 	/**
 	 * @Flow\Inject

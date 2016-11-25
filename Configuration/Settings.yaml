@@ -5,7 +5,7 @@ TYPO3:
         references:
           indexing: "${'#' + Array.join(Indexing.convertArrayOfNodesToArrayOfNodeIdentifiers(value), '#') + '#'}"
       defaultContext:
-        Json: TYPO3\Eel\Helper\JsonHelper
+        Json: Neos\Eel\Helper\JsonHelper
   Neos:
     typoScript:
       autoInclude:
