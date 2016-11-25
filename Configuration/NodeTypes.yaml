@@ -97,7 +97,7 @@ unstructured:
         fulltextExtractor: '${Indexing.extractHtmlTags(node.properties.title)}'
 'Flowpack.SimpleSearch.ContentRepositoryAdaptor:Search':
   superTypes:
-    'TYPO3.Neos:Content': '1'
+    'TYPO3.Neos:Content': true
   ui:
     label: Search
     icon: icon-search
