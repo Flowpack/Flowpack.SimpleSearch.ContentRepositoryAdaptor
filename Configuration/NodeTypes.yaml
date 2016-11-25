@@ -70,7 +70,7 @@ unstructured:
     _hiddenAfterDateTime:
       search:
         indexing: '${(node.hiddenAfterDateTime ? Date.format(node.hiddenAfterDateTime, ''U'') : null)}'
-'TYPO3.Neos.NodeTypes:Text':
+'Neos.NodeTypes:Text':
   search:
     fulltext:
       enable: true
@@ -78,7 +78,7 @@ unstructured:
     text:
       search:
         fulltextExtractor: '${Indexing.extractHtmlTags(node.properties.text)}'
-'TYPO3.Neos.NodeTypes:Headline':
+'Neos.NodeTypes:Headline':
   search:
     fulltext:
       enable: true
