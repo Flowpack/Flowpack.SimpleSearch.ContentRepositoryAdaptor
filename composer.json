@@ -1,14 +1,14 @@
 {
     "name": "flowpack/simplesearch-contentrepositoryadaptor",
     "type": "neos-package",
-    "description": "Implements a bridge to search in TYPO3CR via the flowpack/simplesearch package.",
+    "description": "Implements a bridge to search in Neos CR via the flowpack/simplesearch package.",
     "license": "MIT",
     "require": {
-        "typo3/typo3cr": "*",
-        "typo3/flow": "*",
+        "neos/content-repository": "*",
+        "neos/flow": "~4.0 || dev-master",
         "flowpack/simplesearch": "^1.3.0",
-        "typo3/typo3cr-search": "*",
-        "typo3/neos": "*"
+        "neos/typo3cr-search": "*",
+        "neo/neos": "~3.0 || dev-master"
     },
     "autoload": {
         "psr-4": {
