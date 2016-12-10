@@ -4,10 +4,10 @@
     "description": "Implements a bridge to search in Neos CR via the flowpack/simplesearch package.",
     "license": "MIT",
     "require": {
-        "neos/content-repository": "*",
+        "neos/content-repository": "~3.0 || dev-master",
         "neos/flow": "~4.0 || dev-master",
-        "flowpack/simplesearch": "^1.3.0",
-        "neos/typo3cr-search": "*",
+        "flowpack/simplesearch": "~2.0 || dev-master",
+        "neos/content-repository-search": "~3.0 || dev-master",
         "neo/neos": "~3.0 || dev-master"
     },
     "autoload": {
