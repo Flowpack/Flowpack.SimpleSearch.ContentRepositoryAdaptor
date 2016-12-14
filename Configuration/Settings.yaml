@@ -8,6 +8,6 @@ Neos:
     Search:
       defaultConfigurationPerType:
         references:
-          indexing: '${''#'' + Array.join(Indexing.convertArrayOfNodesToArrayOfNodeIdentifiers(value), ''#'') + ''#''}'
+          indexing: "${'#' + Array.join(Indexing.convertArrayOfNodesToArrayOfNodeIdentifiers(value), '#') + '#'}"
       defaultContext:
         Json: Neos\Eel\Helper\JsonHelper
