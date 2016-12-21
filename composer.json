@@ -8,7 +8,7 @@
         "neos/flow": "~4.0 || dev-master",
         "flowpack/simplesearch": "~2.0 || dev-master",
         "neos/content-repository-search": "~3.0 || dev-master",
-        "neo/neos": "~3.0 || dev-master"
+        "neos/neos": "~3.0 || dev-master"
     },
     "autoload": {
         "psr-4": {
