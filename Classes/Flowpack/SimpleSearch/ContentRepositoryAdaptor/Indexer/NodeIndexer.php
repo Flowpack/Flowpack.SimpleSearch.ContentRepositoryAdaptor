@@ -117,7 +117,11 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 		if (isset($this->indexedNodeData[$identifier])) {
 			$properties = $this->indexClient->findOneByIdentifier($identifier);
 			$properties['__workspace'] = $properties['__workspace'] . ', #' . ($targetWorkspaceName !== NULL ? $targetWorkspaceName : $node->getContext()->getWorkspaceName() ) . '#';
-			$properties['__dimensionshash'] = $properties['__dimensionshash'] . ', #' . md5(json_encode($node->getContext()->getDimensions())) . '#';
+			if (array_key_exists('__dimensionshash', $properties)) {
+				$properties['__dimensionshash'] = $properties['__dimensionshash'] . ', #' . md5(json_encode($node->getContext()->getDimensions())) . '#';
+			} else {
+				$properties['__dimensionshash'] = '#' . md5(json_encode($node->getContext()->getDimensions())) . '#';
+			}
 
 			$this->indexClient->insertOrUpdatePropertiesToIndex($properties, $identifier);
 		} else {
