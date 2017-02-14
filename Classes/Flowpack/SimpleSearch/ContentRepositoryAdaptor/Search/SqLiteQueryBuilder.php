@@ -110,6 +110,70 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	}
 
 	/**
+	 * add a greater than query for a given property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @param string $format
+	 * @return QueryBuilder
+	 */
+	public function greaterThan($propertyName, $propertyValue) {
+		if ($propertyValue instanceof NodeInterface) {
+			$propertyValue = $propertyValue->getIdentifier();
+		}
+
+		return parent::greaterThan($propertyName, $propertyValue);
+	}
+
+	/**
+	 * add a greater than or equal query for a given property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @param string $format
+	 * @return QueryBuilder
+	 */
+	public function greaterThanOrEqual($propertyName, $propertyValue) {
+		if ($propertyValue instanceof NodeInterface) {
+			$propertyValue = $propertyValue->getIdentifier();
+		}
+
+		return parent::greaterThanOrEqual($propertyName, $propertyValue);
+	}
+
+	/**
+	 * add a less than query for a given property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @param string $format
+	 * @return QueryBuilder
+	 */
+	public function lessThan($propertyName, $propertyValue) {
+		if ($propertyValue instanceof NodeInterface) {
+			$propertyValue = $propertyValue->getIdentifier();
+		}
+
+		return parent::lessThan($propertyName, $propertyValue);
+	}
+
+	/**
+	 * add a less than query for a given property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @param string $format
+	 * @return QueryBuilder
+	 */
+	public function lessThanOrEqual($propertyName, $propertyValue) {
+		if ($propertyValue instanceof NodeInterface) {
+			$propertyValue = $propertyValue->getIdentifier();
+		}
+
+		return parent::lessThanOrEqual($propertyName, $propertyValue);
+	}
+
+	/**
 	 * Execute the query and return the list of nodes as result
 	 *
 	 * @return array<\TYPO3\TYPO3CR\Domain\Model\NodeInterface>

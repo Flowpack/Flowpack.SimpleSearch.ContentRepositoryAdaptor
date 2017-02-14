@@ -6,7 +6,7 @@
     "require": {
         "typo3/typo3cr": "*",
         "typo3/flow": "*",
-        "flowpack/simplesearch": "^1.3.0",
+        "flowpack/simplesearch": "dev-master",
         "typo3/typo3cr-search": "*",
         "typo3/neos": "*"
     },
