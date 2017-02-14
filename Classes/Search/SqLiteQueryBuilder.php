@@ -1,17 +1,17 @@
 <?php
 namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search;
 
-use TYPO3\Flow\Annotations as Flow;
-use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
+use Neos\Flow\Annotations as Flow;
+use Neos\ContentRepository\Domain\Model\NodeInterface;
 
 /**
  * Query Builder for Content Repository searches
  */
-class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilder implements \TYPO3\TYPO3CR\Search\Search\QueryBuilderInterface, \TYPO3\Eel\ProtectedContextAwareInterface {
+class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilder implements \Neos\ContentRepository\Search\Search\QueryBuilderInterface, \Neos\Eel\ProtectedContextAwareInterface {
 
 	/**
 	 * @Flow\Inject
-	 * @var \TYPO3\Flow\Log\SystemLoggerInterface
+	 * @var \Neos\Flow\Log\SystemLoggerInterface
 	 */
 	protected $logger;
 
@@ -172,7 +172,7 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	/**
 	 * Execute the query and return the list of nodes as result
 	 *
-	 * @return array<\TYPO3\TYPO3CR\Domain\Model\NodeInterface>
+	 * @return array<\Neos\ContentRepository\Domain\Model\NodeInterface>
 	 */
 	public function execute() {
 		// Adding implicit sorting by __sortIndex (as last fallback) as we can expect it to be there for nodes.

@@ -1,9 +1,9 @@
 <?php
 namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer;
 
-use TYPO3\Flow\Annotations as Flow;
-use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
-use TYPO3\TYPO3CR\Domain\Service\NodeTypeManager;
+use Neos\Flow\Annotations as Flow;
+use Neos\ContentRepository\Domain\Model\NodeInterface;
+use Neos\ContentRepository\Domain\Service\NodeTypeManager;
 
 
 /**
@@ -11,7 +11,7 @@ use TYPO3\TYPO3CR\Domain\Service\NodeTypeManager;
  *
  * @Flow\Scope("singleton")
  */
-class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
+class NodeIndexer extends \Neos\ContentRepository\Search\Indexer\AbstractNodeIndexer {
 
 	/**
 	 * @Flow\Inject
@@ -21,7 +21,7 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 
 	/**
 	 * @Flow\Inject
-	 * @var \TYPO3\Flow\Persistence\PersistenceManagerInterface
+	 * @var \Neos\Flow\Persistence\PersistenceManagerInterface
 	 */
 	protected $persistenceManager;
 
@@ -33,25 +33,25 @@ class NodeIndexer extends \TYPO3\TYPO3CR\Search\Indexer\AbstractNodeIndexer {
 
 	/**
 	 * @Flow\Inject
-	 * @var \TYPO3\TYPO3CR\Domain\Service\ContentDimensionPresetSourceInterface
+	 * @var \Neos\ContentRepository\Domain\Service\ContentDimensionPresetSourceInterface
 	 */
 	protected $contentDimensionPresetSource;
 
 	/**
 	 * @Flow\Inject
-	 * @var \TYPO3\TYPO3CR\Domain\Repository\WorkspaceRepository
+	 * @var \Neos\ContentRepository\Domain\Repository\WorkspaceRepository
 	 */
 	protected $workspaceRepository;
 
 	/**
 	 * @Flow\Inject
-	 * @var \TYPO3\TYPO3CR\Domain\Service\ContextFactoryInterface
+	 * @var \Neos\ContentRepository\Domain\Service\ContextFactoryInterface
 	 */
 	protected $contextFactory;
 
 	/**
 	 * @Flow\Inject
-	 * @var \TYPO3\Flow\Security\Context
+	 * @var \Neos\Flow\Security\Context
 	 */
 	protected $securityContext;
 
