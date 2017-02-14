@@ -82,8 +82,8 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	/**
 	 * add an exact-match query for a given property
 	 *
-	 * @param $propertyName
-	 * @param $propertyValue
+	 * @param string $propertyName
+	 * @param mixed $propertyValue
 	 * @return QueryBuilder
 	 */
 	public function exactMatch($propertyName, $propertyValue) {
@@ -97,8 +97,8 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	/**
 	 * add an like query for a given property
 	 *
-	 * @param $propertyName
-	 * @param $propertyValue
+	 * @param string $propertyName
+	 * @param mixed $propertyValue
 	 * @return QueryBuilder
 	 */
 	public function like($propertyName, $propertyValue) {
@@ -112,9 +112,8 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	/**
 	 * add a greater than query for a given property
 	 *
-	 * @param $propertyName
-	 * @param $propertyValue
-	 * @param string $format
+	 * @param string $propertyName
+	 * @param mixed $propertyValue
 	 * @return QueryBuilder
 	 */
 	public function greaterThan($propertyName, $propertyValue) {
@@ -128,9 +127,8 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	/**
 	 * add a greater than or equal query for a given property
 	 *
-	 * @param $propertyName
-	 * @param $propertyValue
-	 * @param string $format
+	 * @param string $propertyName
+	 * @param mixed $propertyValue
 	 * @return QueryBuilder
 	 */
 	public function greaterThanOrEqual($propertyName, $propertyValue) {
@@ -144,9 +142,8 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	/**
 	 * add a less than query for a given property
 	 *
-	 * @param $propertyName
-	 * @param $propertyValue
-	 * @param string $format
+	 * @param string $propertyName
+	 * @param mixed $propertyValue
 	 * @return QueryBuilder
 	 */
 	public function lessThan($propertyName, $propertyValue) {
@@ -160,9 +157,8 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	/**
 	 * add a less than query for a given property
 	 *
-	 * @param $propertyName
-	 * @param $propertyValue
-	 * @param string $format
+	 * @param string $propertyName
+	 * @param mixed $propertyValue
 	 * @return QueryBuilder
 	 */
 	public function lessThanOrEqual($propertyName, $propertyValue) {
