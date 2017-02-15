@@ -1,9 +1,9 @@
 <?php
 namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Command;
 
-use TYPO3\Flow\Annotations as Flow;
-use TYPO3\Flow\Cli\CommandController;
-use TYPO3\TYPO3CR\Domain\Service\ContextFactoryInterface;
+use Neos\Flow\Annotations as Flow;
+use Neos\Flow\Cli\CommandController;
+use Neos\ContentRepository\Domain\Service\ContextFactoryInterface;
 
 /**
  * Provides CLI features for index handling
@@ -26,13 +26,13 @@ class NodeIndexCommandController extends CommandController {
 
 	/**
 	 * @Flow\Inject
-	 * @var \TYPO3\TYPO3CR\Domain\Repository\WorkspaceRepository
+	 * @var \Neos\ContentRepository\Domain\Repository\WorkspaceRepository
 	 */
 	protected $workspaceRepository;
 
 	/**
 	 * @Flow\Inject
-	 * @var \TYPO3\TYPO3CR\Domain\Repository\NodeDataRepository
+	 * @var \Neos\ContentRepository\Domain\Repository\NodeDataRepository
 	 */
 	protected $nodeDataRepository;
 
@@ -44,7 +44,7 @@ class NodeIndexCommandController extends CommandController {
 
 	/**
 	 * @Flow\Inject
-	 * @var \TYPO3\Neos\Domain\Service\ContentDimensionPresetSourceInterface
+	 * @var \Neos\Neos\Domain\Service\ContentDimensionPresetSourceInterface
 	 */
 	protected $contentDimensionPresetSource;
 
@@ -100,9 +100,9 @@ class NodeIndexCommandController extends CommandController {
 	}
 
 	/**
-	 * @param \TYPO3\TYPO3CR\Domain\Model\Node $currentNode
+	 * @param \Neos\ContentRepository\Domain\Model\Node $currentNode
 	 */
-	protected function traverseNodes(\TYPO3\TYPO3CR\Domain\Model\Node $currentNode) {
+	protected function traverseNodes(\Neos\ContentRepository\Domain\Model\Node $currentNode) {
 		$this->nodeIndexer->indexNode($currentNode, NULL, FALSE);
 		$this->indexedNodes++;
 		foreach ($currentNode->getChildNodes() as $childNode) {

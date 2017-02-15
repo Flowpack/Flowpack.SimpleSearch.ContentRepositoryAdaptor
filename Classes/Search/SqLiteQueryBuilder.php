@@ -1,17 +1,17 @@
 <?php
 namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search;
 
-use TYPO3\Flow\Annotations as Flow;
-use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
+use Neos\Flow\Annotations as Flow;
+use Neos\ContentRepository\Domain\Model\NodeInterface;
 
 /**
  * Query Builder for Content Repository searches
  */
-class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilder implements \TYPO3\TYPO3CR\Search\Search\QueryBuilderInterface, \TYPO3\Eel\ProtectedContextAwareInterface {
+class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilder implements \Neos\ContentRepository\Search\Search\QueryBuilderInterface, \Neos\Eel\ProtectedContextAwareInterface {
 
 	/**
 	 * @Flow\Inject
-	 * @var \TYPO3\Flow\Log\SystemLoggerInterface
+	 * @var \Neos\Flow\Log\SystemLoggerInterface
 	 */
 	protected $logger;
 
@@ -82,8 +82,8 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	/**
 	 * add an exact-match query for a given property
 	 *
-	 * @param $propertyName
-	 * @param $propertyValue
+	 * @param string $propertyName
+	 * @param mixed $propertyValue
 	 * @return QueryBuilder
 	 */
 	public function exactMatch($propertyName, $propertyValue) {
@@ -97,8 +97,8 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	/**
 	 * add an like query for a given property
 	 *
-	 * @param $propertyName
-	 * @param $propertyValue
+	 * @param string $propertyName
+	 * @param mixed $propertyValue
 	 * @return QueryBuilder
 	 */
 	public function like($propertyName, $propertyValue) {
@@ -110,9 +110,69 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 	}
 
 	/**
+	 * add a greater than query for a given property
+	 *
+	 * @param string $propertyName
+	 * @param mixed $propertyValue
+	 * @return QueryBuilder
+	 */
+	public function greaterThan($propertyName, $propertyValue) {
+		if ($propertyValue instanceof NodeInterface) {
+			$propertyValue = $propertyValue->getIdentifier();
+		}
+
+		return parent::greaterThan($propertyName, $propertyValue);
+	}
+
+	/**
+	 * add a greater than or equal query for a given property
+	 *
+	 * @param string $propertyName
+	 * @param mixed $propertyValue
+	 * @return QueryBuilder
+	 */
+	public function greaterThanOrEqual($propertyName, $propertyValue) {
+		if ($propertyValue instanceof NodeInterface) {
+			$propertyValue = $propertyValue->getIdentifier();
+		}
+
+		return parent::greaterThanOrEqual($propertyName, $propertyValue);
+	}
+
+	/**
+	 * add a less than query for a given property
+	 *
+	 * @param string $propertyName
+	 * @param mixed $propertyValue
+	 * @return QueryBuilder
+	 */
+	public function lessThan($propertyName, $propertyValue) {
+		if ($propertyValue instanceof NodeInterface) {
+			$propertyValue = $propertyValue->getIdentifier();
+		}
+
+		return parent::lessThan($propertyName, $propertyValue);
+	}
+
+	/**
+	 * add a less than query for a given property
+	 *
+	 * @param string $propertyName
+	 * @param mixed $propertyValue
+	 * @return QueryBuilder
+	 */
+	public function lessThanOrEqual($propertyName, $propertyValue) {
+		if ($propertyValue instanceof NodeInterface) {
+			$propertyValue = $propertyValue->getIdentifier();
+		}
+
+		return parent::lessThanOrEqual($propertyName, $propertyValue);
+	}
+
+	/**
 	 * Execute the query and return the list of nodes as result
 	 *
-	 * @return array<\TYPO3\TYPO3CR\Domain\Model\NodeInterface>
+	 * @return array<\Neos\ContentRepository\Domain\Model\NodeInterface>
 	 */
 	public function execute() {
 		// Adding implicit sorting by __sortIndex (as last fallback) as we can expect it to be there for nodes.

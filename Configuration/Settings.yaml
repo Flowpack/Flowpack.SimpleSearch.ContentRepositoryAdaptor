@@ -1,12 +1,13 @@
-TYPO3:
-  TYPO3CR:
+
+Neos:
+  Neos:
+    typoScript:
+      autoInclude:
+        Flowpack.SimpleSearch.ContentRepositoryAdaptor: true
+  ContentRepository:
     Search:
       defaultConfigurationPerType:
         references:
           indexing: "${'#' + Array.join(Indexing.convertArrayOfNodesToArrayOfNodeIdentifiers(value), '#') + '#'}"
       defaultContext:
-        Json: TYPO3\Eel\Helper\JsonHelper
-  Neos:
-    typoScript:
-      autoInclude:
-        'Flowpack.SimpleSearch.ContentRepositoryAdaptor': TRUE
+        Json: Neos\Eel\Helper\JsonHelper

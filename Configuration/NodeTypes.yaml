@@ -1,5 +1,5 @@
 
-'TYPO3.Neos:Node': &node
+'Neos.Neos:Node': &node
   properties:
     '__identifier':
       search:
@@ -39,13 +39,13 @@
 
 'unstructured': *node
 
-'TYPO3.Neos:Hidable':
+'Neos.Neos:Hidable':
   properties:
     '_hidden':
       search:
         indexing: "${node.hidden}"
 
-'TYPO3.Neos:Timable':
+'Neos.Neos:Timable':
   properties:
     '_hiddenBeforeDateTime':
       search:
@@ -55,7 +55,7 @@
       search:
         indexing: "${(node.hiddenAfterDateTime ? Date.format(node.hiddenAfterDateTime, 'U') : null)}"
 
-'TYPO3.Neos.NodeTypes:Text':
+'Neos.NodeTypes:Text':
   search:
     fulltext:
       enable: TRUE
@@ -64,7 +64,7 @@
       search:
         fulltextExtractor: "${Indexing.extractHtmlTags(node.properties.text)}"
 
-'TYPO3.Neos.NodeTypes:Headline':
+'Neos.NodeTypes:Headline':
   search:
     fulltext:
       enable: TRUE
@@ -73,7 +73,7 @@
       search:
         fulltextExtractor: "${Indexing.extractHtmlTags(node.properties.title)}"
 
-'TYPO3.Neos:Document':
+'Neos.Neos:Document':
   search:
     fulltext:
       isRoot: TRUE
@@ -83,10 +83,9 @@
       search:
         fulltextExtractor: "${Indexing.extractHtmlTags(node.properties.title)}"
 
-
 'Flowpack.SimpleSearch.ContentRepositoryAdaptor:Search':
   superTypes:
-    'TYPO3.Neos:Content': true
+    'Neos.Neos:Content': true
   ui:
     label: 'Search'
     icon: 'icon-search'
