@@ -1,11 +1,11 @@
 
 {namespace neos=Neos\Neos\ViewHelpers}
-{namespace ts=Neos\Fusion\ViewHelpers}
-{namespace typo3cr=Neos\ContentRepository\ViewHelpers}
+{namespace fusion=Neos\Fusion\ViewHelpers}
+{namespace cr=Neos\ContentRepository\ViewHelpers}
 <div class="flowpack-simplesearch-search">
 	<form method="POST">
 		<input name="search[word]" value="{searchWord}" />
-		<input type="hidden" name="--typo3-typo3cr-viewhelpers-widget-paginateviewhelper[currentPage]" value="" />
+		<input type="hidden" name="--neos-contentrepository-viewhelpers-widget-paginateviewhelper[currentPage]" value="" />
 		<button type="submit">&gt;</button>
 	</form>
 	<hr />
@@ -13,18 +13,18 @@
 		<f:if condition="{searchWord}">
 			<f:if condition="{searchResults -> f:count()}">
 				<dl>
-					<typo3cr:widget.paginate nodes="{searchResults}" as="paginatedNodes" configuration="{itemsPerPage: 5}">
+					<cr:widget.paginate nodes="{searchResults}" as="paginatedNodes" configuration="{itemsPerPage: 5}">
 						<f:for each="{paginatedNodes}" as="searchResult">
 							<dt>
 								<neos:link.node node="{searchResult}">{searchResult.fullLabel}</neos:link.node>
 							</dt>
 
 							<dd>
-								<ts:render path="searchResultContent" context="{searchResult: searchResult}" />
+								<fusion:render path="searchResultContent" context="{searchResult: searchResult}" />
 							</dd>
 							<hr />
 						</f:for>
-					</typo3cr:widget.paginate>
+					</cr:widget.paginate>
 				</dl>
 			</f:if>
 		</f:if>
