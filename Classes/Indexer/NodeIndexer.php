@@ -4,6 +4,7 @@ namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer;
 use Neos\Flow\Annotations as Flow;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\ContentRepository\Domain\Service\NodeTypeManager;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Indexer for Content Repository Nodes.
@@ -133,6 +134,7 @@ class NodeIndexer extends \Neos\ContentRepository\Search\Indexer\AbstractNodeInd
                 $this->addFulltextToRoot($node, $fulltextData);
             }
 
+            $nodePropertiesToBeStoredInIndex = $this->postProcess($nodePropertiesToBeStoredInIndex);
             $this->indexClient->indexData($identifier, $nodePropertiesToBeStoredInIndex, $fulltextData);
             $this->indexedNodeData[$identifier] = $identifier;
         }
@@ -246,6 +248,22 @@ class NodeIndexer extends \Neos\ContentRepository\Search\Indexer\AbstractNodeInd
         $nodeDataPersistenceIdentifier = $this->persistenceManager->getIdentifierByObject($node->getNodeData());
         return $nodeDataPersistenceIdentifier;
     }
+
+    /**
+     * @param array $nodePropertiesToBeStoredInIndex
+     * @return array
+     */
+    protected function postProcess(array $nodePropertiesToBeStoredInIndex)
+    {
+        foreach ($nodePropertiesToBeStoredInIndex as $propertyName => $propertyValue) {
+            if (is_array($propertyValue)) {
+                $nodePropertiesToBeStoredInIndex[$propertyName] = Yaml::dump($propertyValue);
+            }
+        }
+
+        return $nodePropertiesToBeStoredInIndex;
+    }
+
 
     /**
      * @return array
