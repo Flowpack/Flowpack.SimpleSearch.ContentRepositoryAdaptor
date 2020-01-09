@@ -4,11 +4,11 @@
     "description": "Implements a bridge to search in Neos CR via the flowpack/simplesearch package.",
     "license": "MIT",
     "require": {
-        "neos/content-repository": "~3.0 || dev-master",
-        "neos/flow": "~4.0 || ~5.0 || dev-master",
-        "flowpack/simplesearch": "~2.0 || dev-master",
-        "neos/content-repository-search": "~3.0 || dev-master",
-        "neos/neos": "~3.0 || dev-master",
+        "neos/flow": "^5.0 || ^6.0 || dev-master",
+        "neos/neos": "^4.0 || ^5.0 || dev-master",
+        "neos/content-repository": "^4.0 || ^5.0 || dev-master",
+        "neos/content-repository-search": "^3.0 || dev-master",
+        "flowpack/simplesearch": "^3.0 || dev-master",
         "symfony/yaml": "*"
     },
     "autoload": {
@@ -77,7 +77,28 @@
             "Neos.Fusion-20161201202543",
             "Neos.Neos-20161201222211",
             "Neos.Fusion-20161202215034",
-            "Neos.ContentRepository.Search-20161210231100"
+            "Neos.ContentRepository.Search-20161210231100",
+            "Neos.SwiftMailer-20161130105617",
+            "Neos.Fusion-20161219092345",
+            "Neos.ContentRepository-20161219093512",
+            "Neos.Media-20161219094126",
+            "Neos.Neos-20161219094403",
+            "Neos.Neos-20161219122512",
+            "Neos.Fusion-20161219130100",
+            "Neos.Neos-20161220163741",
+            "Neos.Neos-20170115114620",
+            "Neos.Fusion-20170120013047",
+            "Neos.Flow-20170125103800",
+            "Neos.Seo-20170127154600",
+            "Neos.Flow-20170127183102",
+            "Neos.Fusion-20180211175500",
+            "Neos.Fusion-20180211184832",
+            "Neos.Flow-20180415105700",
+            "Neos.Neos-20180907103800",
+            "Neos.Neos.Ui-20190319094900",
+            "Neos.Flow-20190425144900",
+            "Neos.Flow-20190515215000",
+            "Neos.NodeTypes-20190917101945"
         ]
     }
 }

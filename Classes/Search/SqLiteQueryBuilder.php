@@ -1,18 +1,26 @@
 <?php
+declare(strict_types=1);
+
 namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search;
 
-use Neos\Flow\Annotations as Flow;
+use Flowpack\SimpleSearch\Search\SqLiteQueryBuilder as SimpleSearchSqLiteQueryBuilder;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
+use Neos\ContentRepository\Search\Search\QueryBuilderInterface;
+use Neos\Eel\ProtectedContextAwareInterface;
+use Neos\Flow\Annotations as Flow;
+use Neos\Flow\Persistence\Exception\IllegalObjectTypeException;
+use Psr\Log\LoggerInterface;
 
 /**
  * Query Builder for Content Repository searches
+ *
+ * Note: some signatures are not as strict as in the interfaces, because two query builder interfaces are "mixed"
  */
-class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilder implements \Neos\ContentRepository\Search\Search\QueryBuilderInterface, \Neos\Eel\ProtectedContextAwareInterface
+class SqLiteQueryBuilder extends SimpleSearchSqLiteQueryBuilder implements QueryBuilderInterface, ProtectedContextAwareInterface
 {
-
     /**
      * @Flow\Inject
-     * @var \Neos\Flow\Log\SystemLoggerInterface
+     * @var LoggerInterface
      */
     protected $logger;
 
@@ -22,20 +30,6 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
      * @var NodeInterface
      */
     protected $contextNode;
-
-    /**
-     * Sorting strings
-     *
-     * @var array<string>
-     */
-    protected $sorting = array();
-
-    /**
-     * where clauses
-     *
-     * @var array
-     */
-    protected $where = array();
 
     /**
      * Optional message for a log entry on execution of this Query.
@@ -53,7 +47,8 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
 
     /**
      * @param NodeInterface $contextNode
-     * @return QueryBuilder
+     * @return SqLiteQueryBuilder
+     * @throws IllegalObjectTypeException
      */
     public function query(NodeInterface $contextNode)
     {
@@ -73,7 +68,7 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
      * Filter by node type, taking inheritance into account.
      *
      * @param string $nodeType the node type to filter for
-     * @return QueryBuilder
+     * @return SqLiteQueryBuilder
      */
     public function nodeType($nodeType)
     {
@@ -87,9 +82,9 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
      *
      * @param string $propertyName
      * @param mixed $propertyValue
-     * @return QueryBuilder
+     * @return \Flowpack\SimpleSearch\Search\QueryBuilderInterface
      */
-    public function exactMatch($propertyName, $propertyValue)
+    public function exactMatch($propertyName, $propertyValue): \Flowpack\SimpleSearch\Search\QueryBuilderInterface
     {
         if ($propertyValue instanceof NodeInterface) {
             $propertyValue = $propertyValue->getIdentifier();
@@ -103,9 +98,9 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
      *
      * @param string $propertyName
      * @param mixed $propertyValue
-     * @return QueryBuilder
+     * @return \Flowpack\SimpleSearch\Search\QueryBuilderInterface
      */
-    public function like($propertyName, $propertyValue)
+    public function like(string $propertyName, $propertyValue): \Flowpack\SimpleSearch\Search\QueryBuilderInterface
     {
         if ($propertyValue instanceof NodeInterface) {
             $propertyValue = $propertyValue->getIdentifier();
@@ -119,9 +114,9 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
      *
      * @param string $propertyName
      * @param mixed $propertyValue
-     * @return QueryBuilder
+     * @return \Flowpack\SimpleSearch\Search\QueryBuilderInterface
      */
-    public function greaterThan($propertyName, $propertyValue)
+    public function greaterThan(string $propertyName, $propertyValue): \Flowpack\SimpleSearch\Search\QueryBuilderInterface
     {
         if ($propertyValue instanceof NodeInterface) {
             $propertyValue = $propertyValue->getIdentifier();
@@ -135,9 +130,9 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
      *
      * @param string $propertyName
      * @param mixed $propertyValue
-     * @return QueryBuilder
+     * @return \Flowpack\SimpleSearch\Search\QueryBuilderInterface
      */
-    public function greaterThanOrEqual($propertyName, $propertyValue)
+    public function greaterThanOrEqual(string $propertyName, $propertyValue): \Flowpack\SimpleSearch\Search\QueryBuilderInterface
     {
         if ($propertyValue instanceof NodeInterface) {
             $propertyValue = $propertyValue->getIdentifier();
@@ -151,9 +146,9 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
      *
      * @param string $propertyName
      * @param mixed $propertyValue
-     * @return QueryBuilder
+     * @return \Flowpack\SimpleSearch\Search\QueryBuilderInterface
      */
-    public function lessThan($propertyName, $propertyValue)
+    public function lessThan(string $propertyName, $propertyValue): \Flowpack\SimpleSearch\Search\QueryBuilderInterface
     {
         if ($propertyValue instanceof NodeInterface) {
             $propertyValue = $propertyValue->getIdentifier();
@@ -167,9 +162,9 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
      *
      * @param string $propertyName
      * @param mixed $propertyValue
-     * @return QueryBuilder
+     * @return \Flowpack\SimpleSearch\Search\QueryBuilderInterface
      */
-    public function lessThanOrEqual($propertyName, $propertyValue)
+    public function lessThanOrEqual(string $propertyName, $propertyValue): \Flowpack\SimpleSearch\Search\QueryBuilderInterface
     {
         if ($propertyValue instanceof NodeInterface) {
             $propertyValue = $propertyValue->getIdentifier();
@@ -183,7 +178,7 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
      *
      * @return array<\Neos\ContentRepository\Domain\Model\NodeInterface>
      */
-    public function execute()
+    public function execute(): array
     {
         // Adding implicit sorting by __sortIndex (as last fallback) as we can expect it to be there for nodes.
         $this->sorting[] = 'objects.__sortIndex ASC';
@@ -197,10 +192,10 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
         }
 
         if (empty($result)) {
-            return array();
+            return [];
         }
 
-        $nodes = array();
+        $nodes = [];
         foreach ($result as $hit) {
             $nodePath = $hit['__path'];
             $node = $this->contextNode->getNode($nodePath);
@@ -216,7 +211,7 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
      * Log the current request for debugging after it has been executed.
      *
      * @param string $message an optional message to identify the log entry
-     * @return $this
+     * @return SqLiteQueryBuilder
      */
     public function log($message = null)
     {
@@ -231,7 +226,7 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
      *
      * @return integer
      */
-    public function count()
+    public function count(): int
     {
         $timeBefore = microtime(true);
         $count = parent::count();
@@ -253,10 +248,6 @@ class SqLiteQueryBuilder extends \Flowpack\SimpleSearch\Search\SqLiteQueryBuilde
     public function allowsCallOfMethod($methodName)
     {
         // query must be called first to establish a context and starting point.
-        if ($this->contextNode === null && $methodName !== 'query') {
-            return false;
-        }
-
-        return true;
+        return !($this->contextNode === null && $methodName !== 'query');
     }
 }

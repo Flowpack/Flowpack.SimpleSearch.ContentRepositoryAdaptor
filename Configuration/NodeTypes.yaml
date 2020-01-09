@@ -58,7 +58,7 @@
 'Neos.NodeTypes:Text':
   search:
     fulltext:
-      enable: TRUE
+      enable: true
   properties:
     text:
       search:
@@ -67,7 +67,7 @@
 'Neos.NodeTypes:Headline':
   search:
     fulltext:
-      enable: TRUE
+      enable: true
   properties:
     title:
       search:
@@ -76,8 +76,8 @@
 'Neos.Neos:Document':
   search:
     fulltext:
-      isRoot: TRUE
-      enable: TRUE
+      isRoot: true
+      enable: true
   properties:
     title:
       search:
