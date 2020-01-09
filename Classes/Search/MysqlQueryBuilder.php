@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search;
 
-use Flowpack\SimpleSearch\Search\SqLiteQueryBuilder as SimpleSearchSqLiteQueryBuilder;
+use Flowpack\SimpleSearch\Search\MysqlQueryBuilder as SimpleSearchMysqlQueryBuilder;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\ContentRepository\Search\Search\QueryBuilderInterface;
 use Neos\Eel\ProtectedContextAwareInterface;
@@ -16,7 +16,7 @@ use Psr\Log\LoggerInterface;
  *
  * Note: some signatures are not as strict as in the interfaces, because two query builder interfaces are "mixed"
  */
-class SqLiteQueryBuilder extends SimpleSearchSqLiteQueryBuilder implements QueryBuilderInterface, ProtectedContextAwareInterface
+class MysqlQueryBuilder extends SimpleSearchMysqlQueryBuilder implements QueryBuilderInterface, ProtectedContextAwareInterface
 {
     /**
      * @Flow\Inject
@@ -47,7 +47,7 @@ class SqLiteQueryBuilder extends SimpleSearchSqLiteQueryBuilder implements Query
 
     /**
      * @param NodeInterface $contextNode
-     * @return SqLiteQueryBuilder
+     * @return MysqlQueryBuilder
      * @throws IllegalObjectTypeException
      */
     public function query(NodeInterface $contextNode)
@@ -66,7 +66,7 @@ class SqLiteQueryBuilder extends SimpleSearchSqLiteQueryBuilder implements Query
      */
     public function getFindIdentifiersByNodeIdentifierQuery(string $nodeIdentifierPlaceholder): string
     {
-        return 'SELECT __identifier__ FROM objects WHERE __identifier = :' . $nodeIdentifierPlaceholder;
+        return 'SELECT "__identifier__" FROM "fulltext_objects" WHERE "__identifier" = :' . $nodeIdentifierPlaceholder;
     }
 
     /**
@@ -77,7 +77,7 @@ class SqLiteQueryBuilder extends SimpleSearchSqLiteQueryBuilder implements Query
      * Filter by node type, taking inheritance into account.
      *
      * @param string $nodeType the node type to filter for
-     * @return SqLiteQueryBuilder
+     * @return \Flowpack\SimpleSearch\Search\QueryBuilderInterface
      */
     public function nodeType($nodeType)
     {
@@ -125,7 +125,7 @@ class SqLiteQueryBuilder extends SimpleSearchSqLiteQueryBuilder implements Query
      * @param mixed $propertyValue
      * @return \Flowpack\SimpleSearch\Search\QueryBuilderInterface
      */
-    public function greaterThan(string $propertyName, $propertyValue): \Flowpack\SimpleSearch\Search\QueryBuilderInterface
+    public function greaterThan($propertyName, $propertyValue)
     {
         if ($propertyValue instanceof NodeInterface) {
             $propertyValue = $propertyValue->getIdentifier();
@@ -141,7 +141,7 @@ class SqLiteQueryBuilder extends SimpleSearchSqLiteQueryBuilder implements Query
      * @param mixed $propertyValue
      * @return \Flowpack\SimpleSearch\Search\QueryBuilderInterface
      */
-    public function greaterThanOrEqual(string $propertyName, $propertyValue): \Flowpack\SimpleSearch\Search\QueryBuilderInterface
+    public function greaterThanOrEqual($propertyName, $propertyValue)
     {
         if ($propertyValue instanceof NodeInterface) {
             $propertyValue = $propertyValue->getIdentifier();
@@ -157,7 +157,7 @@ class SqLiteQueryBuilder extends SimpleSearchSqLiteQueryBuilder implements Query
      * @param mixed $propertyValue
      * @return \Flowpack\SimpleSearch\Search\QueryBuilderInterface
      */
-    public function lessThan(string $propertyName, $propertyValue): \Flowpack\SimpleSearch\Search\QueryBuilderInterface
+    public function lessThan($propertyName, $propertyValue)
     {
         if ($propertyValue instanceof NodeInterface) {
             $propertyValue = $propertyValue->getIdentifier();
@@ -173,7 +173,7 @@ class SqLiteQueryBuilder extends SimpleSearchSqLiteQueryBuilder implements Query
      * @param mixed $propertyValue
      * @return \Flowpack\SimpleSearch\Search\QueryBuilderInterface
      */
-    public function lessThanOrEqual(string $propertyName, $propertyValue): \Flowpack\SimpleSearch\Search\QueryBuilderInterface
+    public function lessThanOrEqual($propertyName, $propertyValue)
     {
         if ($propertyValue instanceof NodeInterface) {
             $propertyValue = $propertyValue->getIdentifier();
@@ -190,7 +190,7 @@ class SqLiteQueryBuilder extends SimpleSearchSqLiteQueryBuilder implements Query
     public function execute(): array
     {
         // Adding implicit sorting by __sortIndex (as last fallback) as we can expect it to be there for nodes.
-        $this->sorting[] = 'objects.__sortIndex ASC';
+        $this->sorting[] = '"fulltext_objects"."__sortIndex" ASC';
 
         $timeBefore = microtime(true);
         $result = parent::execute();
@@ -220,7 +220,7 @@ class SqLiteQueryBuilder extends SimpleSearchSqLiteQueryBuilder implements Query
      * Log the current request for debugging after it has been executed.
      *
      * @param string $message an optional message to identify the log entry
-     * @return SqLiteQueryBuilder
+     * @return MysqlQueryBuilder
      */
     public function log($message = null)
     {

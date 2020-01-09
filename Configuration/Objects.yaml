@@ -24,6 +24,16 @@ Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search\SqLiteQueryBuilder:
           1:
             value: 'Neos_CR'
 
+Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search\MysqlQueryBuilder:
+  properties:
+    indexClient:
+      object:
+        factoryObjectName: Flowpack\SimpleSearch\Factory\IndexFactory
+        factoryMethodName: create
+        arguments:
+          1:
+            value: 'Neos_CR'
+
 Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer\NodeIndexer:
   properties:
     indexClient:

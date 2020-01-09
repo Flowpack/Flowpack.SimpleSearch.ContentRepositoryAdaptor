@@ -2,6 +2,7 @@
 namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer;
 
 use Flowpack\SimpleSearch\Domain\Service\IndexInterface;
+use Flowpack\SimpleSearch\Search\QueryBuilderInterface;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\ContentRepository\Domain\Repository\WorkspaceRepository;
 use Neos\ContentRepository\Domain\Service\ContentDimensionPresetSourceInterface;
@@ -23,12 +24,17 @@ use Symfony\Component\Yaml\Yaml;
  */
 class NodeIndexer extends AbstractNodeIndexer
 {
-
     /**
      * @Flow\Inject
      * @var IndexInterface
      */
     protected $indexClient;
+
+    /**
+     * @Flow\Inject
+     * @var \Neos\ContentRepository\Search\Search\QueryBuilderInterface
+     */
+    protected $queryBuilder;
 
     /**
      * @Flow\Inject
@@ -178,7 +184,10 @@ class NodeIndexer extends AbstractNodeIndexer
     {
         $nodeIdentifier = $node->getIdentifier();
 
-        $allIndexedVariants = $this->indexClient->executeStatement('SELECT __identifier__ FROM objects WHERE __identifier = :identifier', [':identifier' => $nodeIdentifier]);
+        $allIndexedVariants = $this->indexClient->executeStatement(
+            $this->queryBuilder->getFindIdentifiersByNodeIdentifierQuery('identifier'),
+            [':identifier' => $nodeIdentifier]
+        );
         foreach ($allIndexedVariants as $nodeVariant) {
             $this->indexClient->removeData($nodeVariant['__identifier__']);
         }
