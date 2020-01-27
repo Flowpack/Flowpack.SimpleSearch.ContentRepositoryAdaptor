@@ -1,9 +1,19 @@
 <?php
 namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Command;
 
+use Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer\NodeIndexer;
+use Flowpack\SimpleSearch\Domain\Service\IndexInterface;
+use Flowpack\SimpleSearch\Exception;
+use Neos\ContentRepository\Domain\Model\NodeInterface;
+use Neos\ContentRepository\Domain\Repository\NodeDataRepository;
+use Neos\ContentRepository\Domain\Repository\WorkspaceRepository;
+use Neos\ContentRepository\Domain\Service\ContextFactoryInterface;
+use Neos\ContentRepository\Exception\NodeException;
+use Neos\ContentRepository\Search\Exception\IndexingException;
+use Neos\Eel\Exception as EelException;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
-use Neos\ContentRepository\Domain\Service\ContextFactoryInterface;
+use Neos\Neos\Domain\Service\ContentDimensionPresetSourceInterface;
 
 /**
  * Provides CLI features for index handling
@@ -15,25 +25,25 @@ class NodeIndexCommandController extends CommandController
 
     /**
      * @Flow\Inject
-     * @var \Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer\NodeIndexer
+     * @var NodeIndexer
      */
     protected $nodeIndexer;
 
     /**
      * @Flow\Inject
-     * @var \Flowpack\SimpleSearch\Domain\Service\IndexInterface
+     * @var IndexInterface
      */
     protected $indexClient;
 
     /**
      * @Flow\Inject
-     * @var \Neos\ContentRepository\Domain\Repository\WorkspaceRepository
+     * @var WorkspaceRepository
      */
     protected $workspaceRepository;
 
     /**
      * @Flow\Inject
-     * @var \Neos\ContentRepository\Domain\Repository\NodeDataRepository
+     * @var NodeDataRepository
      */
     protected $nodeDataRepository;
 
@@ -45,7 +55,7 @@ class NodeIndexCommandController extends CommandController
 
     /**
      * @Flow\Inject
-     * @var \Neos\Neos\Domain\Service\ContentDimensionPresetSourceInterface
+     * @var ContentDimensionPresetSourceInterface
      */
     protected $contentDimensionPresetSource;
 
@@ -53,7 +63,6 @@ class NodeIndexCommandController extends CommandController
      * @var integer
      */
     protected $indexedNodes;
-
 
     /**
      * Index all nodes.
@@ -63,13 +72,14 @@ class NodeIndexCommandController extends CommandController
      *
      * @param string $workspace
      * @return void
+     * @throws Exception
      */
-    public function buildCommand($workspace = null)
+    public function buildCommand(string $workspace = null): void
     {
         $this->indexedNodes = 0;
         if ($workspace === null) {
-            foreach ($this->workspaceRepository->findAll() as $workspace) {
-                $this->indexWorkspace($workspace->getName());
+            foreach ($this->workspaceRepository->findAll() as $workspaceInstance) {
+                $this->indexWorkspace($workspaceInstance->getName());
             }
         } else {
             $this->indexWorkspace($workspace);
@@ -79,21 +89,23 @@ class NodeIndexCommandController extends CommandController
 
     /**
      * @param string $workspaceName
+     * @throws Exception
      */
-    protected function indexWorkspace($workspaceName)
+    protected function indexWorkspace(string $workspaceName): void
     {
         $dimensionCombinations = $this->nodeIndexer->calculateDimensionCombinations();
-        if ($dimensionCombinations !== array()) {
+        if ($dimensionCombinations !== []) {
             foreach ($dimensionCombinations as $combination) {
-                $context = $this->contextFactory->create(array('workspaceName' => $workspaceName, 'dimensions' => $combination));
+                $context = $this->contextFactory->create(['workspaceName' => $workspaceName, 'dimensions' => $combination]);
                 $rootNode = $context->getRootNode();
 
                 $this->traverseNodes($rootNode);
+                $rootNode->getContext()->getFirstLevelNodeCache()->flush();
                 $this->outputLine('Workspace "' . $workspaceName . '" and dimensions "' . json_encode($combination) . '" done. (Indexed ' . $this->indexedNodes . ' nodes)');
                 $this->indexedNodes = 0;
             }
         } else {
-            $context = $this->contextFactory->create(array('workspaceName' => $workspaceName));
+            $context = $this->contextFactory->create(['workspaceName' => $workspaceName]);
             $rootNode = $context->getRootNode();
 
             $this->traverseNodes($rootNode);
@@ -103,13 +115,18 @@ class NodeIndexCommandController extends CommandController
     }
 
     /**
-     * @param \Neos\ContentRepository\Domain\Model\Node $currentNode
+     * @param NodeInterface $currentNode
+     * @throws Exception
      */
-    protected function traverseNodes(\Neos\ContentRepository\Domain\Model\Node $currentNode)
+    protected function traverseNodes(NodeInterface $currentNode): void
     {
-        $this->nodeIndexer->indexNode($currentNode, null, false);
+        try {
+            $this->nodeIndexer->indexNode($currentNode, null, false);
+        } catch (NodeException|IndexingException|EelException $exception) {
+            throw new Exception(sprintf('Error during indexing of node %s (%s)', $currentNode->getPath(), $currentNode->getIdentifier()), 1579170291, $exception);
+        }
         $this->indexedNodes++;
-        foreach ($currentNode->getChildNodes() as $childNode) {
+        foreach ($currentNode->findChildNodes() as $childNode) {
             $this->traverseNodes($childNode);
         }
     }
@@ -119,11 +136,13 @@ class NodeIndexCommandController extends CommandController
      *
      * @param boolean $confirmation Should be set to true for something to actually happen.
      */
-    public function flushCommand($confirmation = false)
+    public function flushCommand(bool $confirmation = false): void
     {
         if ($confirmation) {
             $this->indexClient->flush();
             $this->outputLine('The node index was flushed.');
+        } else {
+            $this->outputLine('The node index was NOT flushed, confirmation option was missing.');
         }
     }
 
@@ -131,22 +150,21 @@ class NodeIndexCommandController extends CommandController
      * Optimize the search index. Depends on the underlaying technology what will happen.
      * For sqlite the VACUUM command is sent to rebuild the full database file.
      */
-    public function optimizeCommand()
+    public function optimizeCommand(): void
     {
         $this->outputLine('Starting optimization, do not interrupt or your index may be corrupted...');
         $this->indexClient->optimize();
         $this->outputLine('Optimization finished.');
     }
 
-
     /**
      * Utility to check the content of the index.
      *
-     * @param string $queryString
+     * @param string $queryString raw SQL to send to the index
      */
-    public function findCommand($queryString)
+    public function findCommand(string $queryString): void
     {
-        $result = $this->indexClient->query($queryString);
+        $result = $this->indexClient->executeStatement($queryString, []);
         $this->output->outputTable($result);
     }
 }

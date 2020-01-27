@@ -1,9 +1,20 @@
 <?php
 namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer;
 
-use Neos\Flow\Annotations as Flow;
+use Flowpack\SimpleSearch\Domain\Service\IndexInterface;
+use Flowpack\SimpleSearch\Search\QueryBuilderInterface;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
+use Neos\ContentRepository\Domain\Repository\WorkspaceRepository;
+use Neos\ContentRepository\Domain\Service\ContentDimensionPresetSourceInterface;
+use Neos\ContentRepository\Domain\Service\ContextFactoryInterface;
 use Neos\ContentRepository\Domain\Service\NodeTypeManager;
+use Neos\ContentRepository\Exception\NodeException;
+use Neos\ContentRepository\Search\Exception\IndexingException;
+use Neos\ContentRepository\Search\Indexer\AbstractNodeIndexer;
+use Neos\Eel\Exception;
+use Neos\Flow\Annotations as Flow;
+use Neos\Flow\Persistence\PersistenceManagerInterface;
+use Neos\Flow\Security\Context;
 use Symfony\Component\Yaml\Yaml;
 
 /**
@@ -11,18 +22,23 @@ use Symfony\Component\Yaml\Yaml;
  *
  * @Flow\Scope("singleton")
  */
-class NodeIndexer extends \Neos\ContentRepository\Search\Indexer\AbstractNodeIndexer
+class NodeIndexer extends AbstractNodeIndexer
 {
-
     /**
      * @Flow\Inject
-     * @var \Flowpack\SimpleSearch\Domain\Service\IndexInterface
+     * @var IndexInterface
      */
     protected $indexClient;
 
     /**
      * @Flow\Inject
-     * @var \Neos\Flow\Persistence\PersistenceManagerInterface
+     * @var \Neos\ContentRepository\Search\Search\QueryBuilderInterface
+     */
+    protected $queryBuilder;
+
+    /**
+     * @Flow\Inject
+     * @var PersistenceManagerInterface
      */
     protected $persistenceManager;
 
@@ -34,46 +50,43 @@ class NodeIndexer extends \Neos\ContentRepository\Search\Indexer\AbstractNodeInd
 
     /**
      * @Flow\Inject
-     * @var \Neos\ContentRepository\Domain\Service\ContentDimensionPresetSourceInterface
+     * @var ContentDimensionPresetSourceInterface
      */
     protected $contentDimensionPresetSource;
 
     /**
      * @Flow\Inject
-     * @var \Neos\ContentRepository\Domain\Repository\WorkspaceRepository
+     * @var WorkspaceRepository
      */
     protected $workspaceRepository;
 
     /**
      * @Flow\Inject
-     * @var \Neos\ContentRepository\Domain\Service\ContextFactoryInterface
+     * @var ContextFactoryInterface
      */
     protected $contextFactory;
 
     /**
      * @Flow\Inject
-     * @var \Neos\Flow\Security\Context
+     * @var Context
      */
     protected $securityContext;
 
     /**
-     * the default context variables available inside Eel
-     *
      * @var array
      */
-    protected $defaultContextVariables;
+    protected $fulltextRootNodeTypes = [];
 
     /**
      * @var array
      */
-    protected $fulltextRootNodeTypes = array();
-
-    protected $indexedNodeData = array();
+    protected $indexedNodeData = [];
 
     /**
      * Called by the Flow object framework after creating the object and resolving all dependencies.
      *
      * @param integer $cause Creation cause
+     * @throws \Neos\Flow\Configuration\Exception\InvalidConfigurationTypeException
      */
     public function initializeObject($cause)
     {
@@ -87,9 +100,9 @@ class NodeIndexer extends \Neos\ContentRepository\Search\Indexer\AbstractNodeInd
     }
 
     /**
-     * @return \Flowpack\SimpleSearch\Domain\Service\IndexInterface
+     * @return IndexInterface
      */
-    public function getIndexClient()
+    public function getIndexClient(): IndexInterface
     {
         return $this->indexClient;
     }
@@ -101,6 +114,9 @@ class NodeIndexer extends \Neos\ContentRepository\Search\Indexer\AbstractNodeInd
      * @param string $targetWorkspaceName
      * @param boolean $indexVariants
      * @return void
+     * @throws NodeException
+     * @throws IndexingException
+     * @throws Exception
      */
     public function indexNode(NodeInterface $node, $targetWorkspaceName = null, $indexVariants = true)
     {
@@ -116,15 +132,16 @@ class NodeIndexer extends \Neos\ContentRepository\Search\Indexer\AbstractNodeInd
             return;
         }
 
-        $fulltextData = array();
+        $fulltextData = [];
 
         if (isset($this->indexedNodeData[$identifier])) {
             $properties = $this->indexClient->findOneByIdentifier($identifier);
-            $properties['__workspace'] = $properties['__workspace'] . ', #' . ($targetWorkspaceName !== null ? $targetWorkspaceName : $node->getContext()->getWorkspaceName()) . '#';
+            unset($properties['__identifier__']);
+            $properties['__workspace'] .= ', #' . ($targetWorkspaceName ?? $node->getContext()->getWorkspaceName()) . '#';
             if (array_key_exists('__dimensionshash', $properties)) {
-                $properties['__dimensionshash'] = $properties['__dimensionshash'] . ', #' . md5(json_encode($node->getContext()->getDimensions())) . '#';
+                $properties['__dimensionshash'] .= ', #' . md5(json_encode($node->getContext()->getDimensions(), 0, 512)) . '#';
             } else {
-                $properties['__dimensionshash'] = '#' . md5(json_encode($node->getContext()->getDimensions())) . '#';
+                $properties['__dimensionshash'] = '#' . md5(json_encode($node->getContext()->getDimensions(), 0, 512)) . '#';
             }
 
             $this->indexClient->insertOrUpdatePropertiesToIndex($properties, $identifier);
@@ -155,18 +172,22 @@ class NodeIndexer extends \Neos\ContentRepository\Search\Indexer\AbstractNodeInd
      */
     public function flush()
     {
-        $this->indexedNodeData = array();
+        $this->indexedNodeData = [];
     }
 
     /**
      * @param NodeInterface $node
      * @return void
+     * @throws \Exception
      */
-    protected function indexAllNodeVariants(NodeInterface $node)
+    protected function indexAllNodeVariants(NodeInterface $node): void
     {
         $nodeIdentifier = $node->getIdentifier();
 
-        $allIndexedVariants = $this->indexClient->query('SELECT __identifier__ FROM objects WHERE __identifier = "' . $nodeIdentifier . '"');
+        $allIndexedVariants = $this->indexClient->executeStatement(
+            $this->queryBuilder->getFindIdentifiersByNodeIdentifierQuery('identifier'),
+            [':identifier' => $nodeIdentifier]
+        );
         foreach ($allIndexedVariants as $nodeVariant) {
             $this->indexClient->removeData($nodeVariant['__identifier__']);
         }
@@ -177,23 +198,25 @@ class NodeIndexer extends \Neos\ContentRepository\Search\Indexer\AbstractNodeInd
     }
 
     /**
+     * @param string $nodeIdentifier
      * @param string $workspaceName
+     * @throws \Exception
      */
-    protected function indexNodeInWorkspace($nodeIdentifier, $workspaceName)
+    protected function indexNodeInWorkspace(string $nodeIdentifier, string $workspaceName): void
     {
         $indexer = $this;
-        $this->securityContext->withoutAuthorizationChecks(function () use ($indexer, $nodeIdentifier, $workspaceName) {
+        $this->securityContext->withoutAuthorizationChecks(static function () use ($indexer, $nodeIdentifier, $workspaceName) {
             $dimensionCombinations = $indexer->calculateDimensionCombinations();
-            if ($dimensionCombinations !== array()) {
+            if ($dimensionCombinations !== []) {
                 foreach ($dimensionCombinations as $combination) {
-                    $context = $indexer->contextFactory->create(array('workspaceName' => $workspaceName, 'dimensions' => $combination));
+                    $context = $indexer->contextFactory->create(['workspaceName' => $workspaceName, 'dimensions' => $combination]);
                     $node = $context->getNodeByIdentifier($nodeIdentifier);
                     if ($node !== null) {
                         $indexer->indexNode($node, null, false);
                     }
                 }
             } else {
-                $context = $indexer->contextFactory->create(array('workspaceName' => $workspaceName));
+                $context = $indexer->contextFactory->create(['workspaceName' => $workspaceName]);
                 $node = $context->getNodeByIdentifier($nodeIdentifier);
                 if ($node !== null) {
                     $indexer->indexNode($node, null, false);
@@ -206,7 +229,7 @@ class NodeIndexer extends \Neos\ContentRepository\Search\Indexer\AbstractNodeInd
      * @param NodeInterface $node
      * @param array $fulltext
      */
-    protected function addFulltextToRoot(NodeInterface $node, $fulltext)
+    protected function addFulltextToRoot(NodeInterface $node, array $fulltext): void
     {
         $fulltextRoot = $this->findFulltextRoot($node);
         if ($fulltextRoot !== null) {
@@ -219,15 +242,15 @@ class NodeIndexer extends \Neos\ContentRepository\Search\Indexer\AbstractNodeInd
      * @param NodeInterface $node
      * @return NodeInterface
      */
-    protected function findFulltextRoot(NodeInterface $node)
+    protected function findFulltextRoot(NodeInterface $node): ?NodeInterface
     {
-        if (in_array($node->getNodeType()->getName(), $this->fulltextRootNodeTypes)) {
+        if (in_array($node->getNodeType()->getName(), $this->fulltextRootNodeTypes, true)) {
             return null;
         }
 
         $currentNode = $node->getParent();
         while ($currentNode !== null) {
-            if (in_array($currentNode->getNodeType()->getName(), $this->fulltextRootNodeTypes)) {
+            if (in_array($currentNode->getNodeType()->getName(), $this->fulltextRootNodeTypes, true)) {
                 return $currentNode;
             }
 
@@ -243,17 +266,16 @@ class NodeIndexer extends \Neos\ContentRepository\Search\Indexer\AbstractNodeInd
      * @param NodeInterface $node
      * @return string
      */
-    protected function generateUniqueNodeIdentifier(NodeInterface $node)
+    protected function generateUniqueNodeIdentifier(NodeInterface $node): string
     {
-        $nodeDataPersistenceIdentifier = $this->persistenceManager->getIdentifierByObject($node->getNodeData());
-        return $nodeDataPersistenceIdentifier;
+        return $this->persistenceManager->getIdentifierByObject($node->getNodeData());
     }
 
     /**
      * @param array $nodePropertiesToBeStoredInIndex
      * @return array
      */
-    protected function postProcess(array $nodePropertiesToBeStoredInIndex)
+    protected function postProcess(array $nodePropertiesToBeStoredInIndex): array
     {
         foreach ($nodePropertiesToBeStoredInIndex as $propertyName => $propertyValue) {
             if (is_array($propertyValue)) {
@@ -264,29 +286,28 @@ class NodeIndexer extends \Neos\ContentRepository\Search\Indexer\AbstractNodeInd
         return $nodePropertiesToBeStoredInIndex;
     }
 
-
     /**
      * @return array
      */
-    public function calculateDimensionCombinations()
+    public function calculateDimensionCombinations(): array
     {
         $dimensionPresets = $this->contentDimensionPresetSource->getAllPresets();
 
-        $dimensionValueCountByDimension = array();
+        $dimensionValueCountByDimension = [];
         $possibleCombinationCount = 1;
-        $combinations = array();
+        $combinations = [];
 
         foreach ($dimensionPresets as $dimensionName => $dimensionPreset) {
             if (isset($dimensionPreset['presets']) && !empty($dimensionPreset['presets'])) {
                 $dimensionValueCountByDimension[$dimensionName] = count($dimensionPreset['presets']);
-                $possibleCombinationCount = $possibleCombinationCount * $dimensionValueCountByDimension[$dimensionName];
+                $possibleCombinationCount *= $dimensionValueCountByDimension[$dimensionName];
             }
         }
 
         foreach ($dimensionPresets as $dimensionName => $dimensionPreset) {
             for ($i = 0; $i < $possibleCombinationCount; $i++) {
                 if (!isset($combinations[$i]) || !is_array($combinations[$i])) {
-                    $combinations[$i] = array();
+                    $combinations[$i] = [];
                 }
 
                 $currentDimensionCurrentPreset = current($dimensionPresets[$dimensionName]['presets']);

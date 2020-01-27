@@ -1,32 +1,31 @@
-
 {namespace neos=Neos\Neos\ViewHelpers}
 {namespace fusion=Neos\Fusion\ViewHelpers}
 {namespace cr=Neos\ContentRepository\ViewHelpers}
 <div class="flowpack-simplesearch-search">
-	<form method="POST">
-		<input name="search[word]" value="{searchWord}" />
-		<input type="hidden" name="--neos-contentrepository-viewhelpers-widget-paginateviewhelper[currentPage]" value="" />
-		<button type="submit">&gt;</button>
-	</form>
-	<hr />
-	<div class="search-results">
-		<f:if condition="{searchWord}">
-			<f:if condition="{searchResults -> f:count()}">
-				<dl>
-					<cr:widget.paginate nodes="{searchResults}" as="paginatedNodes" configuration="{itemsPerPage: 5}">
-						<f:for each="{paginatedNodes}" as="searchResult">
-							<dt>
-								<neos:link.node node="{searchResult}">{searchResult.fullLabel}</neos:link.node>
-							</dt>
+    <form method="POST">
+        <input name="search[word]" value="{searchWord}"/>
+        <input type="hidden" name="--neos-contentrepository-viewhelpers-widget-paginateviewhelper[currentPage]" value=""/>
+        <button type="submit">&gt;</button>
+    </form>
+    <hr/>
+    <div class="search-results">
+        <f:if condition="{searchWord}">
+            <f:if condition="{searchResults -> f:count()}">
+                <dl>
+                    <cr:widget.paginate nodes="{searchResults}" as="paginatedNodes" configuration="{itemsPerPage: 5}">
+                        <f:for each="{paginatedNodes}" as="searchResult">
+                            <dt>
+                                <neos:link.node node="{searchResult}">{searchResult.fullLabel}</neos:link.node>
+                            </dt>
 
-							<dd>
-								<fusion:render path="searchResultContent" context="{searchResult: searchResult}" />
-							</dd>
-							<hr />
-						</f:for>
-					</cr:widget.paginate>
-				</dl>
-			</f:if>
-		</f:if>
-	</div>
+                            <dd>
+                                <fusion:render path="searchResultContent" context="{searchResult: searchResult}"/>
+                            </dd>
+                            <hr/>
+                        </f:for>
+                    </cr:widget.paginate>
+                </dl>
+            </f:if>
+        </f:if>
+    </div>
 </div>

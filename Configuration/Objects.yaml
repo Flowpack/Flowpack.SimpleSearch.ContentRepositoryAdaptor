@@ -6,7 +6,7 @@ Flowpack\SimpleSearch\ContentRepositoryAdaptor\Command\NodeIndexCommandControlle
         factoryMethodName: create
         arguments:
           1:
-            value: 'TYPO3_TYPO3CR'
+            value: 'Neos_CR'
 
 Neos\ContentRepository\Search\Search\QueryBuilderInterface:
   className: 'Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search\SqLiteQueryBuilder'
@@ -22,7 +22,17 @@ Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search\SqLiteQueryBuilder:
         factoryMethodName: create
         arguments:
           1:
-            value: 'TYPO3_TYPO3CR'
+            value: 'Neos_CR'
+
+Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search\MysqlQueryBuilder:
+  properties:
+    indexClient:
+      object:
+        factoryObjectName: Flowpack\SimpleSearch\Factory\IndexFactory
+        factoryMethodName: create
+        arguments:
+          1:
+            value: 'Neos_CR'
 
 Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer\NodeIndexer:
   properties:
@@ -32,4 +42,4 @@ Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer\NodeIndexer:
         factoryMethodName: create
         arguments:
           1:
-            value: 'TYPO3_TYPO3CR'
+            value: 'Neos_CR'

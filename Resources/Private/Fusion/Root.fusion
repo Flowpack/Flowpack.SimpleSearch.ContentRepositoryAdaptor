@@ -1,16 +1,16 @@
 prototype(Flowpack.SimpleSearch.ContentRepositoryAdaptor:Search) {
-	searchResults = ${Search.query(site).nodeType('Neos.Neos:Document').log().fulltext(request.arguments.search.word).execute()}
-	searchWord = ${request.arguments.search.word}
+    searchResults = ${Search.query(site).nodeType('Neos.Neos:Document').log().fulltext(request.arguments.search.word).execute()}
+    searchWord = ${request.arguments.search.word}
 
-	searchResultContent = ${Search.query(searchResult).nodeType('Neos.Neos:Content').fulltextMatchResult(request.arguments.search.word)}
+    searchResultContent = ${Search.query(searchResult).nodeType('Neos.Neos:Content').fulltextMatchResult(request.arguments.search.word)}
 
-	@cache {
-		mode = 'uncached'
+    @cache {
+        mode = 'uncached'
 
-		context {
-			1 = 'site'
-			2 = 'node'
-		}
+        context {
+            1 = 'site'
+            2 = 'node'
+        }
 
-	}
+    }
 }
