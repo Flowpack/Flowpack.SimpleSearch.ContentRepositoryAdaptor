@@ -101,7 +101,7 @@ class NodeIndexCommandController extends CommandController
 
                 $this->traverseNodes($rootNode);
                 $rootNode->getContext()->getFirstLevelNodeCache()->flush();
-                $this->outputLine('Workspace "' . $workspaceName . '" and dimensions "' . json_encode($combination, JSON_THROW_ON_ERROR) . '" done. (Indexed ' . $this->indexedNodes . ' nodes)');
+                $this->outputLine('Workspace "' . $workspaceName . '" and dimensions "' . json_encode($combination) . '" done. (Indexed ' . $this->indexedNodes . ' nodes)');
                 $this->indexedNodes = 0;
             }
         } else {

@@ -139,9 +139,9 @@ class NodeIndexer extends AbstractNodeIndexer
             unset($properties['__identifier__']);
             $properties['__workspace'] .= ', #' . ($targetWorkspaceName ?? $node->getContext()->getWorkspaceName()) . '#';
             if (array_key_exists('__dimensionshash', $properties)) {
-                $properties['__dimensionshash'] .= ', #' . md5(json_encode($node->getContext()->getDimensions(), JSON_THROW_ON_ERROR, 512)) . '#';
+                $properties['__dimensionshash'] .= ', #' . md5(json_encode($node->getContext()->getDimensions(), 0, 512)) . '#';
             } else {
-                $properties['__dimensionshash'] = '#' . md5(json_encode($node->getContext()->getDimensions(), JSON_THROW_ON_ERROR, 512)) . '#';
+                $properties['__dimensionshash'] = '#' . md5(json_encode($node->getContext()->getDimensions(), 0, 512)) . '#';
             }
 
             $this->indexClient->insertOrUpdatePropertiesToIndex($properties, $identifier);
