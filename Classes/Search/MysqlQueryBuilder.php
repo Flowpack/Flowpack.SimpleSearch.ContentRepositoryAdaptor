@@ -54,7 +54,7 @@ class MysqlQueryBuilder extends SimpleSearchMysqlQueryBuilder implements QueryBu
     {
         $this->where[] = "(__parentPath LIKE '%#" . $contextNode->getPath() . "#%' OR __path LIKE '" . $contextNode->getPath() . "')";
         $this->where[] = "(__workspace LIKE '%#" . $contextNode->getContext()->getWorkspace()->getName() . "#%')";
-        $this->where[] = "(__dimensionshash LIKE '%#" . md5(json_encode($contextNode->getContext()->getDimensions(), JSON_THROW_ON_ERROR)) . "#%')";
+        $this->where[] = "(__dimensionshash LIKE '%#" . md5(json_encode($contextNode->getContext()->getDimensions())) . "#%')";
         $this->contextNode = $contextNode;
 
         return $this;
