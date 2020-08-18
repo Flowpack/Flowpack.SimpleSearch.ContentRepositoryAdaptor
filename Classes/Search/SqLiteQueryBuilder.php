@@ -197,7 +197,7 @@ class SqLiteQueryBuilder extends SimpleSearchSqLiteQueryBuilder implements Query
         $timeAfterwards = microtime(true);
 
         if ($this->queryLogEnabled === true) {
-            $this->logger->log('Query Log (' . $this->logMessage . '): -- execution time: ' . (($timeAfterwards - $timeBefore) * 1000) . ' ms -- Total Results: ' . count($result), LOG_DEBUG);
+            $this->logger->debug('Query Log (' . $this->logMessage . '): -- execution time: ' . (($timeAfterwards - $timeBefore) * 1000) . ' ms -- Total Results: ' . count($result));
         }
 
         if (empty($result)) {
@@ -242,7 +242,7 @@ class SqLiteQueryBuilder extends SimpleSearchSqLiteQueryBuilder implements Query
         $timeAfterwards = microtime(true);
 
         if ($this->queryLogEnabled === true) {
-            $this->logger->log('Query Log (' . $this->logMessage . '): -- execution time: ' . (($timeAfterwards - $timeBefore) * 1000) . ' ms -- Total Results: ' . $count, LOG_DEBUG);
+            $this->logger->debug('Query Log (' . $this->logMessage . '): -- execution time: ' . (($timeAfterwards - $timeBefore) * 1000) . ' ms -- Total Results: ' . $count);
         }
 
         return $count;
