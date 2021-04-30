@@ -1,6 +1,6 @@
 {namespace neos=Neos\Neos\ViewHelpers}
 {namespace fusion=Neos\Fusion\ViewHelpers}
-{namespace cr=Neos\ContentRepository\ViewHelpers}
+{namespace search=Neos\ContentRepository\Search\ViewHelpers}
 <div class="flowpack-simplesearch-search">
     <form method="POST">
         <input name="search[word]" value="{searchWord}"/>
@@ -10,9 +10,9 @@
     <hr/>
     <div class="search-results">
         <f:if condition="{searchWord}">
-            <f:if condition="{searchResults -> f:count()}">
+            <f:if condition="{searchQuery}">
                 <dl>
-                    <cr:widget.paginate nodes="{searchResults}" as="paginatedNodes" configuration="{itemsPerPage: 5}">
+                    <search:widget.paginate query="{searchQuery}" as="paginatedNodes" configuration="{configuration}">
                         <f:for each="{paginatedNodes}" as="searchResult">
                             <dt>
                                 <neos:link.node node="{searchResult}">{searchResult.fullLabel}</neos:link.node>
@@ -23,7 +23,7 @@
                             </dd>
                             <hr/>
                         </f:for>
-                    </cr:widget.paginate>
+                    </search:widget.paginate>
                 </dl>
             </f:if>
         </f:if>
