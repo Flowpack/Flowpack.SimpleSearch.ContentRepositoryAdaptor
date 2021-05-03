@@ -233,10 +233,6 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
             $this->logger->debug('Query Log (' . $this->logMessage . '): -- execution time: ' . (($timeAfterwards - $timeBefore) * 1000) . ' ms -- Total Results: ' . count($result));
         }
 
-        if (empty($result)) {
-            return [];
-        }
-
         $nodes = [];
         foreach ($result as $hit) {
             $nodePath = $hit['__path'];
