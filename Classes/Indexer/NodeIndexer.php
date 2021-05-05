@@ -182,7 +182,7 @@ class NodeIndexer extends AbstractNodeIndexer
      */
     protected function indexAllNodeVariants(NodeInterface $node): void
     {
-        $nodeIdentifier = $node->getIdentifier();
+        $nodeIdentifier = (string) $node->getNodeAggregateIdentifier();
 
         $allIndexedVariants = $this->indexClient->executeStatement(
             $this->queryBuilder->getFindIdentifiersByNodeIdentifierQuery('identifier'),
@@ -248,13 +248,13 @@ class NodeIndexer extends AbstractNodeIndexer
             return null;
         }
 
-        $currentNode = $node->getParent();
+        $currentNode = $node->findParentNode();
         while ($currentNode !== null) {
             if (in_array($currentNode->getNodeType()->getName(), $this->fulltextRootNodeTypes, true)) {
                 return $currentNode;
             }
 
-            $currentNode = $currentNode->getParent();
+            $currentNode = $currentNode->findParentNode();
         }
 
         return null;

@@ -81,8 +81,8 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
      */
     public function query(NodeInterface $contextNode): QueryBuilderInterface
     {
-        $this->getSimpleSearchQueryBuilder()->customCondition("(__parentPath LIKE '%#" . $contextNode->getPath() . "#%' OR __path LIKE '" . $contextNode->getPath() . "')");
-        $this->getSimpleSearchQueryBuilder()->like('__path', $contextNode->getPath());
+        $this->getSimpleSearchQueryBuilder()->customCondition("(__parentPath LIKE '%#" . $contextNode->findNodePath() . "#%' OR __path LIKE '" . $contextNode->findNodePath() . "')");
+        $this->getSimpleSearchQueryBuilder()->like('__path', (string) $contextNode->findNodePath());
         $this->getSimpleSearchQueryBuilder()->like('__workspace', "#" . $contextNode->getContext()->getWorkspace()->getName() . "#");
         $this->getSimpleSearchQueryBuilder()->like('__dimensionshash', "#" . md5(json_encode($contextNode->getContext()->getDimensions())) . "#");
         $this->contextNode = $contextNode;
@@ -123,7 +123,7 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
     public function exactMatch($propertyName, $propertyValue): QueryBuilderInterface
     {
         if ($propertyValue instanceof NodeInterface) {
-            $propertyValue = $propertyValue->getIdentifier();
+            $propertyValue = (string) $propertyValue->getNodeAggregateIdentifier();
         }
 
         $this->getSimpleSearchQueryBuilder()->exactMatch($propertyName, $propertyValue);
@@ -140,7 +140,7 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
     public function like(string $propertyName, $propertyValue): QueryBuilderInterface
     {
         if ($propertyValue instanceof NodeInterface) {
-            $propertyValue = $propertyValue->getIdentifier();
+            $propertyValue = (string) $propertyValue->getNodeAggregateIdentifier();
         }
 
         $this->getSimpleSearchQueryBuilder()->like($propertyName, $propertyValue);
@@ -157,7 +157,7 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
     public function greaterThan($propertyName, $propertyValue)
     {
         if ($propertyValue instanceof NodeInterface) {
-            $propertyValue = $propertyValue->getIdentifier();
+            $propertyValue = (string) $propertyValue->getNodeAggregateIdentifier();
         }
 
         $this->getSimpleSearchQueryBuilder()->greaterThan($propertyName, $propertyValue);
@@ -174,7 +174,7 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
     public function greaterThanOrEqual($propertyName, $propertyValue)
     {
         if ($propertyValue instanceof NodeInterface) {
-            $propertyValue = $propertyValue->getIdentifier();
+            $propertyValue = (string) $propertyValue->getNodeAggregateIdentifier();
         }
 
         $this->getSimpleSearchQueryBuilder()->greaterThanOrEqual($propertyName, $propertyValue);
@@ -191,7 +191,7 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
     public function lessThan($propertyName, $propertyValue)
     {
         if ($propertyValue instanceof NodeInterface) {
-            $propertyValue = $propertyValue->getIdentifier();
+            $propertyValue = (string) $propertyValue->getNodeAggregateIdentifier();
         }
 
         $this->getSimpleSearchQueryBuilder()->lessThan($propertyName, $propertyValue);
@@ -208,7 +208,7 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
     public function lessThanOrEqual($propertyName, $propertyValue)
     {
         if ($propertyValue instanceof NodeInterface) {
-            $propertyValue = $propertyValue->getIdentifier();
+            $propertyValue = (string) $propertyValue->getNodeAggregateIdentifier();
         }
 
         $this->getSimpleSearchQueryBuilder()->lessThanOrEqual($propertyName, $propertyValue);
@@ -238,7 +238,7 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
             $nodePath = $hit['__path'];
             $node = $this->contextNode->getNode($nodePath);
             if ($node instanceof NodeInterface) {
-                $nodes[$node->getIdentifier()] = $node;
+                $nodes[(string) $node->getNodeAggregateIdentifier()] = $node;
             }
         }
 
@@ -249,7 +249,7 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
      * Log the current request for debugging after it has been executed.
      *
      * @param string $message an optional message to identify the log entry
-     * @return MysqlQueryBuilder
+     * @return AbstractQueryBuilder
      */
     public function log($message = null)
     {

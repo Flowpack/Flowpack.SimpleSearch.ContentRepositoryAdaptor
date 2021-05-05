@@ -123,7 +123,7 @@ class NodeIndexCommandController extends CommandController
         try {
             $this->nodeIndexer->indexNode($currentNode, null, false);
         } catch (NodeException|IndexingException|EelException $exception) {
-            throw new Exception(sprintf('Error during indexing of node %s (%s)', $currentNode->getPath(), $currentNode->getIdentifier()), 1579170291, $exception);
+            throw new Exception(sprintf('Error during indexing of node %s (%s)', $currentNode->findNodePath(), (string) $currentNode->getNodeAggregateIdentifier()), 1579170291, $exception);
         }
         $this->indexedNodes++;
         foreach ($currentNode->findChildNodes() as $childNode) {
