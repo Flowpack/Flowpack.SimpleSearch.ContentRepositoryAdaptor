@@ -7,7 +7,7 @@
         "neos/flow": "^5.0 || ^6.0 || dev-master",
         "neos/neos": "^4.0 || ^5.0 || dev-master",
         "neos/content-repository": "^4.0 || ^5.0 || dev-master",
-        "neos/content-repository-search": "^3.0 || dev-master",
+        "neos/content-repository-search": "^3.0 || ^4.0 || dev-master",
         "flowpack/simplesearch": "^3.0 || ^4.0 || dev-master",
         "symfony/yaml": "*"
     },
