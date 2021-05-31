@@ -3,8 +3,16 @@ prototype(Flowpack.SimpleSearch.ContentRepositoryAdaptor:Search) < prototype(Neo
 
     searchResults = ${Search.query(site).nodeType('Neos.Neos:Document').log().fulltext(request.arguments.search.word).execute()}
     searchWord = ${request.arguments.search.word}
+    searchQuery = ${this.searchWord ? Search.query(site).nodeType('Neos.Neos:Document').log().fulltext(request.arguments.search.word) : null}
 
     searchResultContent = ${Search.query(searchResult).nodeType('Neos.Neos:Content').fulltextMatchResult(request.arguments.search.word)}
+
+    configuration = Neos.Fusion:DataStructure {
+        itemsPerPage = 25
+        insertAbove = false
+        insertBelow = true
+        maximumNumberOfLinks = 10
+    }
 
     @cache {
         mode = 'uncached'

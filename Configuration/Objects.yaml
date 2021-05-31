@@ -14,7 +14,7 @@ Neos\ContentRepository\Search\Search\QueryBuilderInterface:
 Neos\ContentRepository\Search\Indexer\NodeIndexerInterface:
   className: 'Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer\NodeIndexer'
 
-Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search\SqLiteQueryBuilder:
+Flowpack\SimpleSearch\Search\SqLiteQueryBuilder:
   properties:
     indexClient:
       object:
@@ -24,7 +24,7 @@ Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search\SqLiteQueryBuilder:
           1:
             value: 'Neos_CR'
 
-Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search\MysqlQueryBuilder:
+Flowpack\SimpleSearch\Search\MysqlQueryBuilder:
   properties:
     indexClient:
       object:

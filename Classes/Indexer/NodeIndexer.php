@@ -1,8 +1,8 @@
 <?php
+
 namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer;
 
 use Flowpack\SimpleSearch\Domain\Service\IndexInterface;
-use Flowpack\SimpleSearch\Search\QueryBuilderInterface;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\ContentRepository\Domain\Repository\WorkspaceRepository;
 use Neos\ContentRepository\Domain\Service\ContentDimensionPresetSourceInterface;
@@ -118,7 +118,7 @@ class NodeIndexer extends AbstractNodeIndexer
      * @throws IndexingException
      * @throws Exception
      */
-    public function indexNode(NodeInterface $node, $targetWorkspaceName = null, $indexVariants = true)
+    public function indexNode(NodeInterface $node, $targetWorkspaceName = null, $indexVariants = true): void
     {
         if ($indexVariants === true) {
             $this->indexAllNodeVariants($node);
@@ -161,7 +161,7 @@ class NodeIndexer extends AbstractNodeIndexer
      * @param NodeInterface $node
      * @return void
      */
-    public function removeNode(NodeInterface $node)
+    public function removeNode(NodeInterface $node): void
     {
         $identifier = $this->generateUniqueNodeIdentifier($node);
         $this->indexClient->removeData($identifier);
@@ -170,7 +170,7 @@ class NodeIndexer extends AbstractNodeIndexer
     /**
      * @return void
      */
-    public function flush()
+    public function flush(): void
     {
         $this->indexedNodeData = [];
     }
@@ -182,7 +182,7 @@ class NodeIndexer extends AbstractNodeIndexer
      */
     protected function indexAllNodeVariants(NodeInterface $node): void
     {
-        $nodeIdentifier = $node->getIdentifier();
+        $nodeIdentifier = (string) $node->getNodeAggregateIdentifier();
 
         $allIndexedVariants = $this->indexClient->executeStatement(
             $this->queryBuilder->getFindIdentifiersByNodeIdentifierQuery('identifier'),
@@ -248,13 +248,13 @@ class NodeIndexer extends AbstractNodeIndexer
             return null;
         }
 
-        $currentNode = $node->getParent();
+        $currentNode = $node->findParentNode();
         while ($currentNode !== null) {
             if (in_array($currentNode->getNodeType()->getName(), $this->fulltextRootNodeTypes, true)) {
                 return $currentNode;
             }
 
-            $currentNode = $currentNode->getParent();
+            $currentNode = $currentNode->findParentNode();
         }
 
         return null;
