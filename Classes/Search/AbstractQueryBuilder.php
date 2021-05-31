@@ -106,7 +106,7 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
      * @param string $nodeType the node type to filter for
      * @return QueryBuilderInterface
      */
-    public function nodeType($nodeType): QueryBuilderInterface
+    public function nodeType(string $nodeType): QueryBuilderInterface
     {
         $this->getSimpleSearchQueryBuilder()->like('__typeAndSuperTypes', "#" . $nodeType . "#");
 
@@ -120,7 +120,7 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
      * @param mixed $propertyValue
      * @return QueryBuilderInterface
      */
-    public function exactMatch($propertyName, $propertyValue): QueryBuilderInterface
+    public function exactMatch(string $propertyName, $propertyValue): QueryBuilderInterface
     {
         if ($propertyValue instanceof NodeInterface) {
             $propertyValue = (string) $propertyValue->getNodeAggregateIdentifier();

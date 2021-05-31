@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Command;
 
 use Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer\NodeIndexer;
@@ -22,7 +24,6 @@ use Neos\Neos\Domain\Service\ContentDimensionPresetSourceInterface;
  */
 class NodeIndexCommandController extends CommandController
 {
-
     /**
      * @Flow\Inject
      * @var NodeIndexer
