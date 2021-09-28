@@ -258,7 +258,7 @@ class NodeIndexer extends AbstractNodeIndexer
 
                 $currentNode = $currentNode->findParentNode();
             }
-        } catch (NodeException) {
+        } catch (NodeException $exception) {
             return null;
         }
 
