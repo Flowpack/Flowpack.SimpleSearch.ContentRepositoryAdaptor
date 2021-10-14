@@ -249,13 +249,17 @@ class NodeIndexer extends AbstractNodeIndexer
             return null;
         }
 
-        $currentNode = $node->findParentNode();
-        while ($currentNode !== null) {
-            if (in_array($currentNode->getNodeType()->getName(), $this->fulltextRootNodeTypes, true)) {
-                return $currentNode;
-            }
+        try {
+            $currentNode = $node->findParentNode();
+            while ($currentNode !== null) {
+                if (in_array($currentNode->getNodeType()->getName(), $this->fulltextRootNodeTypes, true)) {
+                    return $currentNode;
+                }
 
-            $currentNode = $currentNode->findParentNode();
+                $currentNode = $currentNode->findParentNode();
+            }
+        } catch (NodeException $exception) {
+            return null;
         }
 
         return null;
