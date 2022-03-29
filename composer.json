@@ -4,9 +4,9 @@
     "description": "Implements a bridge to search in Neos CR via the flowpack/simplesearch package.",
     "license": "MIT",
     "require": {
-        "neos/flow": "^7.0 || dev-master",
-        "neos/neos": "^7.0 || dev-master",
-        "neos/content-repository": "^7.0 || dev-master",
+        "neos/flow": "^7.0 || ^8.0 || dev-master",
+        "neos/neos": "^7.0 || ^8.0 || dev-master",
+        "neos/content-repository": "^7.0 || ^8.0 || dev-master",
         "neos/content-repository-search": "^4.0 || dev-master",
         "flowpack/simplesearch": "^5.0 || dev-master",
         "symfony/yaml": "*"
