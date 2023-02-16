@@ -12,8 +12,10 @@ use Neos\ContentRepository\Domain\Service\NodeTypeManager;
 use Neos\ContentRepository\Exception\NodeException;
 use Neos\ContentRepository\Search\Exception\IndexingException;
 use Neos\ContentRepository\Search\Indexer\AbstractNodeIndexer;
+use Neos\ContentRepository\Search\Search\QueryBuilderInterface;
 use Neos\Eel\Exception;
 use Neos\Flow\Annotations as Flow;
+use Neos\Flow\Configuration\Exception\InvalidConfigurationTypeException;
 use Neos\Flow\Persistence\PersistenceManagerInterface;
 use Neos\Flow\Security\Context;
 use Symfony\Component\Yaml\Yaml;
@@ -33,7 +35,7 @@ class NodeIndexer extends AbstractNodeIndexer
 
     /**
      * @Flow\Inject
-     * @var \Neos\ContentRepository\Search\Search\QueryBuilderInterface
+     * @var QueryBuilderInterface
      */
     protected $queryBuilder;
 
@@ -87,9 +89,9 @@ class NodeIndexer extends AbstractNodeIndexer
      * Called by the Flow object framework after creating the object and resolving all dependencies.
      *
      * @param integer $cause Creation cause
-     * @throws \Neos\Flow\Configuration\Exception\InvalidConfigurationTypeException
+     * @throws InvalidConfigurationTypeException
      */
-    public function initializeObject($cause)
+    public function initializeObject($cause): void
     {
         parent::initializeObject($cause);
         foreach ($this->nodeTypeManager->getNodeTypes() as $nodeType) {
@@ -100,9 +102,6 @@ class NodeIndexer extends AbstractNodeIndexer
         }
     }
 
-    /**
-     * @return IndexInterface
-     */
     public function getIndexClient(): IndexInterface
     {
         return $this->indexClient;
@@ -111,13 +110,9 @@ class NodeIndexer extends AbstractNodeIndexer
     /**
      * index this node, and add it to the current bulk request.
      *
-     * @param NodeInterface $node
      * @param string $targetWorkspaceName
      * @param boolean $indexVariants
-     * @return void
-     * @throws NodeException
-     * @throws IndexingException
-     * @throws Exception
+     * @throws NodeException|IndexingException|Exception
      */
     public function indexNode(NodeInterface $node, $targetWorkspaceName = null, $indexVariants = true): void
     {
@@ -158,27 +153,18 @@ class NodeIndexer extends AbstractNodeIndexer
         }
     }
 
-    /**
-     * @param NodeInterface $node
-     * @return void
-     */
     public function removeNode(NodeInterface $node): void
     {
         $identifier = $this->generateUniqueNodeIdentifier($node);
         $this->indexClient->removeData($identifier);
     }
 
-    /**
-     * @return void
-     */
     public function flush(): void
     {
         $this->indexedNodeData = [];
     }
 
     /**
-     * @param NodeInterface $node
-     * @return void
      * @throws \Exception
      */
     protected function indexAllNodeVariants(NodeInterface $node): void
@@ -199,8 +185,6 @@ class NodeIndexer extends AbstractNodeIndexer
     }
 
     /**
-     * @param string $nodeIdentifier
-     * @param string $workspaceName
      * @throws \Exception
      */
     protected function indexNodeInWorkspace(string $nodeIdentifier, string $workspaceName): void
@@ -226,10 +210,6 @@ class NodeIndexer extends AbstractNodeIndexer
         });
     }
 
-    /**
-     * @param NodeInterface $node
-     * @param array $fulltext
-     */
     protected function addFulltextToRoot(NodeInterface $node, array $fulltext): void
     {
         $fulltextRoot = $this->findFulltextRoot($node);
@@ -239,10 +219,6 @@ class NodeIndexer extends AbstractNodeIndexer
         }
     }
 
-    /**
-     * @param NodeInterface $node
-     * @return NodeInterface
-     */
     protected function findFulltextRoot(NodeInterface $node): ?NodeInterface
     {
         if (in_array($node->getNodeType()->getName(), $this->fulltextRootNodeTypes, true)) {
@@ -267,19 +243,12 @@ class NodeIndexer extends AbstractNodeIndexer
 
     /**
      * Generate identifier for index entry based on node identifier and context
-     *
-     * @param NodeInterface $node
-     * @return string
      */
     protected function generateUniqueNodeIdentifier(NodeInterface $node): string
     {
         return $this->persistenceManager->getIdentifierByObject($node->getNodeData());
     }
 
-    /**
-     * @param array $nodePropertiesToBeStoredInIndex
-     * @return array
-     */
     protected function postProcess(array $nodePropertiesToBeStoredInIndex): array
     {
         foreach ($nodePropertiesToBeStoredInIndex as $propertyName => $propertyValue) {
@@ -291,9 +260,6 @@ class NodeIndexer extends AbstractNodeIndexer
         return $nodePropertiesToBeStoredInIndex;
     }
 
-    /**
-     * @return array
-     */
     public function calculateDimensionCombinations(): array
     {
         $dimensionPresets = $this->contentDimensionPresetSource->getAllPresets();

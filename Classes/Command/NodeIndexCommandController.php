@@ -70,9 +70,6 @@ class NodeIndexCommandController extends CommandController
      *
      * This command (re-)indexes all nodes contained in the content repository and sets the schema beforehand.
      *
-     *
-     * @param string $workspace
-     * @return void
      * @throws Exception
      */
     public function buildCommand(string $workspace = null): void
@@ -89,7 +86,6 @@ class NodeIndexCommandController extends CommandController
     }
 
     /**
-     * @param string $workspaceName
      * @throws Exception
      */
     protected function indexWorkspace(string $workspaceName): void
@@ -116,7 +112,6 @@ class NodeIndexCommandController extends CommandController
     }
 
     /**
-     * @param NodeInterface $currentNode
      * @throws Exception
      */
     protected function traverseNodes(NodeInterface $currentNode): void
