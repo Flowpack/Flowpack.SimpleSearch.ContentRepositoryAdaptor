@@ -70,6 +70,12 @@ class NodeIndexer extends AbstractNodeIndexer
     protected $contextFactory;
 
     /**
+     * @var array
+     * @Flow\InjectConfiguration(package="Neos.ContentRepository.Search")
+     */
+    protected $settings;
+
+    /**
      * @Flow\Inject
      * @var Context
      */
@@ -116,6 +122,19 @@ class NodeIndexer extends AbstractNodeIndexer
      */
     public function indexNode(NodeInterface $node, $targetWorkspaceName = null, $indexVariants = true): void
     {
+        if ($this->settings['indexAllWorkspaces'] === false) {
+            // we are only supposed to index the live workspace.
+            // We need to check the workspace at two occasions; checking the
+            // $targetWorkspaceName and the workspace name of the node's context as fallback
+            if ($targetWorkspaceName !== null && $targetWorkspaceName !== 'live') {
+                return;
+            }
+
+            if ($targetWorkspaceName === null && $node->getContext()->getWorkspaceName() !== 'live') {
+                return;
+            }
+        }
+
         if ($indexVariants === true) {
             $this->indexAllNodeVariants($node);
             return;

@@ -66,6 +66,12 @@ class NodeIndexCommandController extends CommandController
     protected $indexedNodes;
 
     /**
+     * @var array
+     * @Flow\InjectConfiguration(package="Neos.ContentRepository.Search")
+     */
+    protected $settings;
+
+    /**
      * Index all nodes.
      *
      * This command (re-)indexes all nodes contained in the content repository and sets the schema beforehand.
@@ -74,6 +80,10 @@ class NodeIndexCommandController extends CommandController
      */
     public function buildCommand(string $workspace = null): void
     {
+        if ($workspace === null && $this->settings['indexAllWorkspaces'] === false) {
+            $workspace = 'live';
+        }
+
         $this->indexedNodes = 0;
         if ($workspace === null) {
             foreach ($this->workspaceRepository->findAll() as $workspaceInstance) {
