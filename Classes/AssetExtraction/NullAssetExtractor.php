@@ -10,6 +10,9 @@ use Neos\Media\Domain\Model\AssetInterface;
 
 class NullAssetExtractor implements AssetExtractorInterface
 {
+    /**
+     * @throws NotImplementedException
+     */
     public function extract(AssetInterface $asset): AssetContent
     {
         throw new NotImplementedException('AssetExtractor is not implemented in SimpleSearchAdaptor.');

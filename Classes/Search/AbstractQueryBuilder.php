@@ -75,7 +75,6 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
     }
 
     /**
-     * @param NodeInterface $contextNode
      * @return MysqlQueryBuilder
      * @throws IllegalObjectTypeException
      */
@@ -90,11 +89,7 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
         return $this;
     }
 
-    /**
-     * @param string $nodeIdentifierPlaceholder
-     * @return string
-     */
-    abstract public function getFindIdentifiersByNodeIdentifierQuery(string $nodeIdentifierPlaceholder);
+    abstract public function getFindIdentifiersByNodeIdentifierQuery(string $nodeIdentifierPlaceholder): string;
 
     /**
      * HIGH-LEVEL API
@@ -102,9 +97,6 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
 
     /**
      * Filter by node type, taking inheritance into account.
-     *
-     * @param string $nodeType the node type to filter for
-     * @return QueryBuilderInterface
      */
     public function nodeType(string $nodeType): QueryBuilderInterface
     {
@@ -115,10 +107,6 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
 
     /**
      * add an exact-match query for a given property
-     *
-     * @param string $propertyName
-     * @param mixed $propertyValue
-     * @return QueryBuilderInterface
      */
     public function exactMatch(string $propertyName, $propertyValue): QueryBuilderInterface
     {
@@ -132,10 +120,6 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
 
     /**
      * add an like query for a given property
-     *
-     * @param string $propertyName
-     * @param mixed $propertyValue
-     * @return QueryBuilderInterface
      */
     public function like(string $propertyName, $propertyValue): QueryBuilderInterface
     {
@@ -149,12 +133,8 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
 
     /**
      * add a greater than query for a given property
-     *
-     * @param string $propertyName
-     * @param mixed $propertyValue
-     * @return QueryBuilderInterface
      */
-    public function greaterThan($propertyName, $propertyValue)
+    public function greaterThan($propertyName, $propertyValue): QueryBuilderInterface
     {
         if ($propertyValue instanceof NodeInterface) {
             $propertyValue = (string) $propertyValue->getNodeAggregateIdentifier();
@@ -166,12 +146,8 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
 
     /**
      * add a greater than or equal query for a given property
-     *
-     * @param string $propertyName
-     * @param mixed $propertyValue
-     * @return QueryBuilderInterface
      */
-    public function greaterThanOrEqual($propertyName, $propertyValue)
+    public function greaterThanOrEqual(string $propertyName, $propertyValue): QueryBuilderInterface
     {
         if ($propertyValue instanceof NodeInterface) {
             $propertyValue = (string) $propertyValue->getNodeAggregateIdentifier();
@@ -183,12 +159,8 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
 
     /**
      * add a less than query for a given property
-     *
-     * @param string $propertyName
-     * @param mixed $propertyValue
-     * @return QueryBuilderInterface
      */
-    public function lessThan($propertyName, $propertyValue)
+    public function lessThan(string $propertyName, $propertyValue): QueryBuilderInterface
     {
         if ($propertyValue instanceof NodeInterface) {
             $propertyValue = (string) $propertyValue->getNodeAggregateIdentifier();
@@ -200,12 +172,8 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
 
     /**
      * add a less than query for a given property
-     *
-     * @param string $propertyName
-     * @param mixed $propertyValue
-     * @return QueryBuilderInterface
      */
-    public function lessThanOrEqual($propertyName, $propertyValue)
+    public function lessThanOrEqual(string $propertyName, $propertyValue): QueryBuilderInterface
     {
         if ($propertyValue instanceof NodeInterface) {
             $propertyValue = (string) $propertyValue->getNodeAggregateIdentifier();
@@ -249,9 +217,8 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
      * Log the current request for debugging after it has been executed.
      *
      * @param string $message an optional message to identify the log entry
-     * @return AbstractQueryBuilder
      */
-    public function log($message = null)
+    public function log(string $message = null): AbstractQueryBuilder
     {
         $this->queryLogEnabled = true;
         $this->logMessage = $message;
@@ -261,8 +228,6 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
 
     /**
      * Return the total number of hits for the query.
-     *
-     * @return integer
      */
     public function count(): int
     {
@@ -279,9 +244,8 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
 
     /**
      * @param string $methodName
-     * @return boolean
      */
-    public function allowsCallOfMethod($methodName)
+    public function allowsCallOfMethod($methodName): bool
     {
         if ($methodName !== 'getFindIdentifiersByNodeIdentifierQuery') {
             // query must be called first to establish a context and starting point.
