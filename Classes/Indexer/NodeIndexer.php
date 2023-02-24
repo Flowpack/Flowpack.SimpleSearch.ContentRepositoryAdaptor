@@ -135,8 +135,7 @@ class NodeIndexer extends AbstractNodeIndexer
 
         $fulltextData = [];
 
-        if (isset($this->indexedNodeData[$identifier])) {
-            $properties = $this->indexClient->findOneByIdentifier($identifier);
+        if (isset($this->indexedNodeData[$identifier]) ($properties = $this->indexClient->findOneByIdentifier($identifier)) !== false) {
             unset($properties['__identifier__']);
             $properties['__workspace'] .= ', #' . ($targetWorkspaceName ?? $node->getContext()->getWorkspaceName()) . '#';
             if (array_key_exists('__dimensionshash', $properties)) {
