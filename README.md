@@ -1,8 +1,6 @@
-[![SensioLabs Insight](https://insight.sensiolabs.com/projects/f65658fd-394a-4cd3-8c7b-639680eb4404/small.png)](https://insight.sensiolabs.com/projects/f65658fd-394a-4cd3-8c7b-639680eb4404)
-[![Code Climate](https://codeclimate.com/github/kitsunet/Flowpack.SimpleSearch.ContentRepositoryAdaptor/badges/gpa.svg)](https://codeclimate.com/github/kitsunet/Flowpack.SimpleSearch.ContentRepositoryAdaptor)
+# SimpleSearch ContentRepositoryAdaptor
 
-SimpleSearch ContentRepositoryAdaptor
-=====================================
+[![Latest Stable Version](https://poser.pugx.org/flowpack/simplesearch-contentrepositoryadaptor/v/stable)](https://packagist.org/packages/flowpack/simplesearch-contentrepositoryadaptor) [![Total Downloads](https://poser.pugx.org/flowpack/simplesearch-contentrepositoryadaptor/downloads)](https://packagist.org/packages/flowpack/simplesearch-contentrepositoryadaptor)
 
 A search for the Neos Content Repository based on the SimpleSearch. This package
 is an implementation of the Neos.ContentRepository.Search API.
@@ -23,8 +21,8 @@ query times of about 300ms.
 If you have more Nodes to index you should probably consider using a "real" search
 engine like ElasticSearch.
 
-Using MySQL
------------
+## Using MySQL
+
 
 To use MySQL, switch the implementation for the interfaces in your `Objects.yaml`
 and configure the DB connection as needed:
