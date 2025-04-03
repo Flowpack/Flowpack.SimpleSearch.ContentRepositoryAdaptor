@@ -6,7 +6,8 @@
     "require": {
         "neos/flow": "^9.0",
         "neos/neos": "^9.0",
-        "neos/content-repository": "^9.0 ",
+        "neos/contentrepository-core": "^9.0",
+        "neos/contentrepositoryregistry": "^9.0",
         "neos/content-repository-search": "^5.0 || dev-main",
         "flowpack/simplesearch": "^5.0 || dev-main",
         "symfony/yaml": "*"
