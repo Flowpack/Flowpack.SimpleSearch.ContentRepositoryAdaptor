@@ -23,16 +23,12 @@ class MysqlQueryBuilder extends AbstractQueryBuilder
         return $this->mysqlQueryBuilder;
     }
 
-    /**
-     * @param string $nodeIdentifierPlaceholder
-     * @return string
-     */
     public function getFindIdentifiersByNodeIdentifierQuery(string $nodeIdentifierPlaceholder): string
     {
         return 'SELECT "__identifier__" FROM "fulltext_objects" WHERE "__identifier" = :' . $nodeIdentifierPlaceholder;
     }
 
-    public function fulltextMatchResult($searchword, $resultTokens = 200, $ellipsis = '...', $beginModifier = '<b>', $endModifier = '</b>'): string
+    public function fulltextMatchResult(string $searchword, int $resultTokens = 200, string $ellipsis = '...', string $beginModifier = '<b>', string $endModifier = '</b>'): string
     {
         return $this->mysqlQueryBuilder->fulltextMatchResult($searchword, $resultTokens, $ellipsis, $beginModifier, $endModifier);
     }

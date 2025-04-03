@@ -24,10 +24,6 @@ class SqLiteQueryBuilder extends AbstractQueryBuilder
         return $this->sqLiteQueryBuilder;
     }
 
-    /**
-     * @param string $nodeIdentifierPlaceholder
-     * @return string
-     */
     public function getFindIdentifiersByNodeIdentifierQuery(string $nodeIdentifierPlaceholder): string
     {
         return 'SELECT __identifier__ FROM objects WHERE __identifier = :' . $nodeIdentifierPlaceholder;
