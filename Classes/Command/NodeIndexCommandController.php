@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Command;
 
-use Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer\NodeIndexer;
 use Flowpack\SimpleSearch\Domain\Service\IndexInterface;
 use Flowpack\SimpleSearch\Exception;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
@@ -12,6 +11,7 @@ use Neos\ContentRepository\Domain\Repository\WorkspaceRepository;
 use Neos\ContentRepository\Domain\Service\ContextFactoryInterface;
 use Neos\ContentRepository\Exception\NodeException;
 use Neos\ContentRepository\Search\Exception\IndexingException;
+use Neos\ContentRepository\Search\Indexer\NodeIndexerInterface;
 use Neos\Eel\Exception as EelException;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
@@ -26,7 +26,7 @@ class NodeIndexCommandController extends CommandController
 {
     /**
      * @Flow\Inject
-     * @var NodeIndexer
+     * @var NodeIndexerInterface
      */
     protected $nodeIndexer;
 
