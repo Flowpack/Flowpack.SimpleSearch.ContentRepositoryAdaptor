@@ -4,12 +4,16 @@ declare(strict_types=1);
 namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer;
 
 use Flowpack\SimpleSearch\Domain\Service\IndexInterface;
-use Neos\ContentRepository\Domain\Model\NodeInterface;
-use Neos\ContentRepository\Domain\Repository\WorkspaceRepository;
-use Neos\ContentRepository\Domain\Service\ContentDimensionPresetSourceInterface;
-use Neos\ContentRepository\Domain\Service\ContextFactoryInterface;
-use Neos\ContentRepository\Domain\Service\NodeTypeManager;
-use Neos\ContentRepository\Exception\NodeException;
+use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
+use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
+use Neos\ContentRepository\Core\NodeType\NodeTypeNames;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindClosestNodeFilter;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\NodeType\NodeTypeCriteria;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
+use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
+use Neos\ContentRepository\Core\SharedModel\Node\NodeAddress;
+use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
+use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepository\Search\Exception\IndexingException;
 use Neos\ContentRepository\Search\Indexer\AbstractNodeIndexer;
 use Neos\Eel\Exception;
@@ -45,30 +49,6 @@ class NodeIndexer extends AbstractNodeIndexer
 
     /**
      * @Flow\Inject
-     * @var NodeTypeManager
-     */
-    protected $nodeTypeManager;
-
-    /**
-     * @Flow\Inject
-     * @var ContentDimensionPresetSourceInterface
-     */
-    protected $contentDimensionPresetSource;
-
-    /**
-     * @Flow\Inject
-     * @var WorkspaceRepository
-     */
-    protected $workspaceRepository;
-
-    /**
-     * @Flow\Inject
-     * @var ContextFactoryInterface
-     */
-    protected $contextFactory;
-
-    /**
-     * @Flow\Inject
      * @var Context
      */
     protected $securityContext;
@@ -83,22 +63,8 @@ class NodeIndexer extends AbstractNodeIndexer
      */
     protected $indexedNodeData = [];
 
-    /**
-     * Called by the Flow object framework after creating the object and resolving all dependencies.
-     *
-     * @param integer $cause Creation cause
-     * @throws \Neos\Flow\Configuration\Exception\InvalidConfigurationTypeException
-     */
-    public function initializeObject($cause)
-    {
-        parent::initializeObject($cause);
-        foreach ($this->nodeTypeManager->getNodeTypes() as $nodeType) {
-            $searchSettingsForNodeType = $nodeType->getConfiguration('search');
-            if (is_array($searchSettingsForNodeType) && isset($searchSettingsForNodeType['fulltext']['isRoot']) && $searchSettingsForNodeType['fulltext']['isRoot'] === true) {
-                $this->fulltextRootNodeTypes[] = $nodeType->getName();
-            }
-        }
-    }
+    #[\Neos\Flow\Annotations\Inject]
+    protected \Neos\ContentRepositoryRegistry\ContentRepositoryRegistry $contentRepositoryRegistry;
 
     /**
      * @return IndexInterface
@@ -111,15 +77,14 @@ class NodeIndexer extends AbstractNodeIndexer
     /**
      * index this node, and add it to the current bulk request.
      *
-     * @param NodeInterface $node
+     * @param Node $node
      * @param string $targetWorkspaceName
      * @param boolean $indexVariants
      * @return void
-     * @throws NodeException
      * @throws IndexingException
      * @throws Exception
      */
-    public function indexNode(NodeInterface $node, $targetWorkspaceName = null, $indexVariants = true): void
+    public function indexNode(Node $node, $targetWorkspaceName = null, $indexVariants = true): void
     {
         if ($indexVariants === true) {
             $this->indexAllNodeVariants($node);
@@ -128,20 +93,15 @@ class NodeIndexer extends AbstractNodeIndexer
 
         $identifier = $this->generateUniqueNodeIdentifier($node);
 
-        if ($node->isRemoved()) {
-            $this->indexClient->removeData($identifier);
-            return;
-        }
-
         $fulltextData = [];
 
         if (isset($this->indexedNodeData[$identifier]) && ($properties = $this->indexClient->findOneByIdentifier($identifier)) !== false) {
             unset($properties['__identifier__']);
-            $properties['__workspace'] .= ', #' . ($targetWorkspaceName ?? $node->getContext()->getWorkspaceName()) . '#';
+            $properties['__workspace'] .= ', #' . ($targetWorkspaceName ?? $node->workspaceName) . '#';
             if (array_key_exists('__dimensionshash', $properties)) {
-                $properties['__dimensionshash'] .= ', #' . md5(json_encode($node->getContext()->getDimensions(), 0, 512)) . '#';
+                $properties['__dimensionshash'] .= ', #' . $node->dimensionSpacePoint->hash . '#';
             } else {
-                $properties['__dimensionshash'] = '#' . md5(json_encode($node->getContext()->getDimensions(), 0, 512)) . '#';
+                $properties['__dimensionshash'] = '#' . $node->dimensionSpacePoint->hash . '#';
             }
 
             $this->indexClient->insertOrUpdatePropertiesToIndex($properties, $identifier);
@@ -158,10 +118,11 @@ class NodeIndexer extends AbstractNodeIndexer
     }
 
     /**
-     * @param NodeInterface $node
+     * @param Node $node
+     * @param WorkspaceName|null $targetWorkspaceName
      * @return void
      */
-    public function removeNode(NodeInterface $node): void
+    public function removeNode(Node $node, ?WorkspaceName $targetWorkspaceName = null): void
     {
         $identifier = $this->generateUniqueNodeIdentifier($node);
         $this->indexClient->removeData($identifier);
@@ -176,48 +137,47 @@ class NodeIndexer extends AbstractNodeIndexer
     }
 
     /**
-     * @param NodeInterface $node
+     * @param Node $node
      * @return void
      * @throws \Exception
      */
-    protected function indexAllNodeVariants(NodeInterface $node): void
+    protected function indexAllNodeVariants(Node $node): void
     {
-        $nodeIdentifier = (string) $node->getNodeAggregateIdentifier();
+        $aggregateId = $node->aggregateId;
 
         $allIndexedVariants = $this->indexClient->executeStatement(
             $this->queryBuilder->getFindIdentifiersByNodeIdentifierQuery('identifier'),
-            [':identifier' => $nodeIdentifier]
+            [':identifier' => $aggregateId->value]
         );
         foreach ($allIndexedVariants as $nodeVariant) {
             $this->indexClient->removeData($nodeVariant['__identifier__']);
         }
 
-        foreach ($this->workspaceRepository->findAll() as $workspace) {
-            $this->indexNodeInWorkspace($nodeIdentifier, $workspace->getName());
+        foreach ($this->contentRepositoryRegistry->get($node->contentRepositoryId)->findWorkspaces() as $workspace) {
+            $this->indexNodeInWorkspace($node->contentRepositoryId, $aggregateId, $workspace->workspaceName);
         }
     }
 
     /**
-     * @param string $nodeIdentifier
+     * @param string $aggregateId
      * @param string $workspaceName
      * @throws \Exception
      */
-    protected function indexNodeInWorkspace(string $nodeIdentifier, string $workspaceName): void
+    protected function indexNodeInWorkspace(ContentRepositoryId $contentRepositoryId, NodeAggregateId $aggregateId, WorkspaceName $workspaceName): void
     {
+        $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
+
         $indexer = $this;
-        $this->securityContext->withoutAuthorizationChecks(static function () use ($indexer, $nodeIdentifier, $workspaceName) {
-            $dimensionCombinations = $indexer->calculateDimensionCombinations();
-            if ($dimensionCombinations !== []) {
-                foreach ($dimensionCombinations as $combination) {
-                    $context = $indexer->contextFactory->create(['workspaceName' => $workspaceName, 'dimensions' => $combination]);
-                    $node = $context->getNodeByIdentifier($nodeIdentifier);
-                    if ($node !== null) {
-                        $indexer->indexNode($node, null, false);
-                    }
-                }
-            } else {
-                $context = $indexer->contextFactory->create(['workspaceName' => $workspaceName]);
-                $node = $context->getNodeByIdentifier($nodeIdentifier);
+        $this->securityContext->withoutAuthorizationChecks(static function () use ($indexer, $contentRepository, $aggregateId, $workspaceName) {
+            $dimensionSpacePoints = $indexer->calculateDimensionCombinations($contentRepository->id);
+            if ($dimensionSpacePoints->isEmpty()) {
+                $dimensionSpacePoints = DimensionSpacePointSet::fromArray([DimensionSpacePoint::createWithoutDimensions()]);
+
+            }
+            foreach ($dimensionSpacePoints as $dimensionSpacePoint) {
+                $subgraph = $contentRepository->getContentSubgraph($workspaceName, $dimensionSpacePoint);
+
+                $node = $subgraph->findNodeById($aggregateId);
                 if ($node !== null) {
                     $indexer->indexNode($node, null, false);
                 }
@@ -226,10 +186,10 @@ class NodeIndexer extends AbstractNodeIndexer
     }
 
     /**
-     * @param NodeInterface $node
+     * @param Node $node
      * @param array $fulltext
      */
-    protected function addFulltextToRoot(NodeInterface $node, array $fulltext): void
+    protected function addFulltextToRoot(Node $node, array $fulltext): void
     {
         $fulltextRoot = $this->findFulltextRoot($node);
         if ($fulltextRoot !== null) {
@@ -239,40 +199,37 @@ class NodeIndexer extends AbstractNodeIndexer
     }
 
     /**
-     * @param NodeInterface $node
-     * @return NodeInterface
+     * @param Node $node
+     * @return Node
      */
-    protected function findFulltextRoot(NodeInterface $node): ?NodeInterface
+    protected function findFulltextRoot(Node $node): ?Node
     {
-        if (in_array($node->getNodeType()->getName(), $this->fulltextRootNodeTypes, true)) {
+        $fulltextRootNodeTypeNames = $this->getFulltextRootNodeTypeNames($node->contentRepositoryId);
+
+        if (in_array($node->nodeTypeName, iterator_to_array($fulltextRootNodeTypeNames->getIterator()), true)) {
             return null;
         }
 
         try {
-            $currentNode = $node->findParentNode();
-            while ($currentNode !== null) {
-                if (in_array($currentNode->getNodeType()->getName(), $this->fulltextRootNodeTypes, true)) {
-                    return $currentNode;
-                }
+            $subgraph = $this->contentRepositoryRegistry->subgraphForNode($node);
+            return $subgraph->findClosestNode($node->aggregateId, FindClosestNodeFilter::create(
+                NodeTypeCriteria::createWithAllowedNodeTypeNames($fulltextRootNodeTypeNames)
+            ));
 
-                $currentNode = $currentNode->findParentNode();
-            }
-        } catch (NodeException $exception) {
+        } catch (\Exception) {
             return null;
         }
-
-        return null;
     }
 
     /**
      * Generate identifier for index entry based on node identifier and context
      *
-     * @param NodeInterface $node
+     * @param Node $node
      * @return string
      */
-    protected function generateUniqueNodeIdentifier(NodeInterface $node): string
+    protected function generateUniqueNodeIdentifier(Node $node): string
     {
-        return $this->persistenceManager->getIdentifierByObject($node->getNodeData());
+        return sha1(NodeAddress::fromNode($node)->toJson());
     }
 
     /**
@@ -293,36 +250,33 @@ class NodeIndexer extends AbstractNodeIndexer
     /**
      * @return array
      */
-    public function calculateDimensionCombinations(): array
+    public function calculateDimensionCombinations(ContentRepositoryId $contentRepositoryId): DimensionSpacePointSet
     {
-        $dimensionPresets = $this->contentDimensionPresetSource->getAllPresets();
+        $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
+        return $contentRepository->getVariationGraph()->getDimensionSpacePoints();
+    }
 
-        $dimensionValueCountByDimension = [];
-        $possibleCombinationCount = 1;
-        $combinations = [];
-
-        foreach ($dimensionPresets as $dimensionName => $dimensionPreset) {
-            if (isset($dimensionPreset['presets']) && !empty($dimensionPreset['presets'])) {
-                $dimensionValueCountByDimension[$dimensionName] = count($dimensionPreset['presets']);
-                $possibleCombinationCount *= $dimensionValueCountByDimension[$dimensionName];
-            }
-        }
-
-        foreach ($dimensionPresets as $dimensionName => $dimensionPreset) {
-            for ($i = 0; $i < $possibleCombinationCount; $i++) {
-                if (!isset($combinations[$i]) || !is_array($combinations[$i])) {
-                    $combinations[$i] = [];
-                }
-
-                $currentDimensionCurrentPreset = current($dimensionPresets[$dimensionName]['presets']);
-                $combinations[$i][$dimensionName] = $currentDimensionCurrentPreset['values'];
-
-                if (!next($dimensionPresets[$dimensionName]['presets'])) {
-                    reset($dimensionPresets[$dimensionName]['presets']);
+    /**
+     * @param Node $node
+     * @return bool
+     */
+    private function getFulltextRootNodeTypeNames(ContentRepositoryId $contentRepositoryId): NodeTypeNames
+    {
+        if (!isset($this->fulltextRootNodeTypes[$contentRepositoryId->value])) {
+            $nodeTypeNames = [];
+            $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
+            foreach ($contentRepository->getNodeTypeManager()->getNodeTypes() as $nodeType) {
+                $searchSettingsForNodeType = $nodeType->getConfiguration('search');
+                if (
+                    is_array($searchSettingsForNodeType) && isset($searchSettingsForNodeType['fulltext']['isRoot'])
+                    && $searchSettingsForNodeType['fulltext']['isRoot'] === true
+                ) {
+                    $nodeTypeNames[] = $nodeType->name;
                 }
             }
+            $this->fulltextRootNodeTypes[$contentRepositoryId->value] = NodeTypeNames::fromArray($nodeTypeNames);
         }
 
-        return $combinations;
+        return $this->fulltextRootNodeTypes[$contentRepositoryId->value];
     }
 }
