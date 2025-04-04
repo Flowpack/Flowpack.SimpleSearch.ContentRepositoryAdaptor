@@ -48,3 +48,30 @@ and configure the DB connection as needed:
           value: '%env:DATABASE_PASSWORD%'
 
 The `arguments` are the index identifier (can be chosen freely) and the DSN.
+
+## Exclude NodeTypes from indexing
+
+By default the indexing processes all NodeTypes, but you can change this in your *Settings.yaml*:
+
+```yaml
+Neos:
+  ContentRepository:
+    Search:
+      defaultConfigurationPerNodeType:
+        '*':
+          indexed: true
+        'Neos.Neos:FallbackNode':
+          indexed: false
+        'Neos.Neos:Shortcut':
+          indexed: false
+        'Neos.Neos:ContentCollection':
+          indexed: false
+```
+
+You need to explicitly configure the individual NodeTypes (this feature does not check the Super Type configuration).
+But you  can use a special notation to configure a full namespace, `Acme.AcmeCom:*` will be applied for all node
+types in the `Acme.AcmeCom` namespace. The most specific configuration is used in this order:
+
+- NodeType name (`Neos.Neos:Shortcut`)
+- Full namespace notation (`Neos.Neos:*`)
+- Catch all (`*`)

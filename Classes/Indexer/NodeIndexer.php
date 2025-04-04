@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Indexer;
 
+use Flowpack\SimpleSearch\ContentRepositoryAdaptor\Service\NodeTypeIndexingConfiguration;
 use Flowpack\SimpleSearch\Domain\Service\IndexInterface;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\ContentRepository\Domain\Repository\WorkspaceRepository;
@@ -14,8 +15,10 @@ use Neos\ContentRepository\Search\Exception\IndexingException;
 use Neos\ContentRepository\Search\Indexer\AbstractNodeIndexer;
 use Neos\Eel\Exception;
 use Neos\Flow\Annotations as Flow;
+use Neos\Flow\Log\Utility\LogEnvironment;
 use Neos\Flow\Persistence\PersistenceManagerInterface;
 use Neos\Flow\Security\Context;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Yaml\Yaml;
 
 /**
@@ -84,6 +87,18 @@ class NodeIndexer extends AbstractNodeIndexer
     protected $indexedNodeData = [];
 
     /**
+     * @Flow\Inject
+     * @var NodeTypeIndexingConfiguration
+     */
+    protected $nodeTypeIndexingConfiguration;
+
+    /**
+     * @Flow\Inject
+     * @var LoggerInterface
+     */
+    protected $logger;
+
+    /**
      * Called by the Flow object framework after creating the object and resolving all dependencies.
      *
      * @param integer $cause Creation cause
@@ -121,6 +136,11 @@ class NodeIndexer extends AbstractNodeIndexer
      */
     public function indexNode(NodeInterface $node, $targetWorkspaceName = null, $indexVariants = true): void
     {
+        if ($this->nodeTypeIndexingConfiguration->isIndexable($node->getNodeType()) === false) {
+            $this->logger->debug(sprintf('Node "%s" (%s) skipped, Node Type is not allowed in the index.', $node->getContextPath(), $node->getNodeType()), LogEnvironment::fromMethodName(__METHOD__));
+            return;
+        }
+
         if ($indexVariants === true) {
             $this->indexAllNodeVariants($node);
             return;

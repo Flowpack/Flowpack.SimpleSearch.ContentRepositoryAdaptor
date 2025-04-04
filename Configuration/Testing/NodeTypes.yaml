@@ -1,0 +1,7 @@
+'Flowpack.SimpleSearch.ContentRepositoryAdaptor:BaseType':
+  superTypes: {  }
+'Flowpack.SimpleSearch.ContentRepositoryAdaptor:Type1':
+  superTypes:
+    'Flowpack.SimpleSearch.ContentRepositoryAdaptor:BaseType': true
+'Flowpack.SimpleSearch.ContentRepositoryAdaptor:Type2':
+  superTypes: {  }

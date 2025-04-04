@@ -1,0 +1,11 @@
+Neos:
+  ContentRepository:
+    Search:
+      realtimeIndexing:
+        enabled: false
+      defaultConfigurationPerNodeType:
+        '*':
+          indexed: true
+        'Flowpack.SimpleSearch.ContentRepositoryAdaptor:Type1':
+          indexed: false
+
