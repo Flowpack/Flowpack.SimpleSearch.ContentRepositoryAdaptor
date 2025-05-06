@@ -5,17 +5,20 @@ namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Command;
 
 use Flowpack\SimpleSearch\Domain\Service\IndexInterface;
 use Flowpack\SimpleSearch\Exception;
-use Neos\ContentRepository\Domain\Model\NodeInterface;
-use Neos\ContentRepository\Domain\Repository\NodeDataRepository;
-use Neos\ContentRepository\Domain\Repository\WorkspaceRepository;
-use Neos\ContentRepository\Domain\Service\ContextFactoryInterface;
-use Neos\ContentRepository\Exception\NodeException;
+use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
+use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindDescendantNodesFilter;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
+use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
+use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepository\Search\Exception\IndexingException;
+use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\ContentRepository\Search\Indexer\NodeIndexerInterface;
 use Neos\Eel\Exception as EelException;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
-use Neos\Neos\Domain\Service\ContentDimensionPresetSourceInterface;
+use Neos\Neos\Domain\Service\NodeTypeNameFactory;
+use Neos\Neos\Domain\SubtreeTagging\NeosVisibilityConstraints;
 
 /**
  * Provides CLI features for index handling
@@ -36,34 +39,8 @@ class NodeIndexCommandController extends CommandController
      */
     protected $indexClient;
 
-    /**
-     * @Flow\Inject
-     * @var WorkspaceRepository
-     */
-    protected $workspaceRepository;
-
-    /**
-     * @Flow\Inject
-     * @var NodeDataRepository
-     */
-    protected $nodeDataRepository;
-
-    /**
-     * @Flow\Inject
-     * @var ContextFactoryInterface
-     */
-    protected $contextFactory;
-
-    /**
-     * @Flow\Inject
-     * @var ContentDimensionPresetSourceInterface
-     */
-    protected $contentDimensionPresetSource;
-
-    /**
-     * @var integer
-     */
-    protected $indexedNodes;
+    #[Flow\Inject]
+    protected ContentRepositoryRegistry $contentRepositoryRegistry;
 
     /**
      * Index all nodes.
@@ -75,15 +52,18 @@ class NodeIndexCommandController extends CommandController
      * @return void
      * @throws Exception
      */
-    public function buildCommand(string $workspace = null): void
+    public function buildCommand(string $contentRepository = 'default', ?string $workspace = null): void
     {
-        $this->indexedNodes = 0;
+        $contentRepositoryId = ContentRepositoryId::fromString($contentRepository);
+        $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
+
         if ($workspace === null) {
-            foreach ($this->workspaceRepository->findAll() as $workspaceInstance) {
-                $this->indexWorkspace($workspaceInstance->getName());
+            foreach ($contentRepository->findWorkspaces() as $workspaceInstance) {
+                $this->indexWorkspace($contentRepositoryId, $workspaceInstance->workspaceName);
             }
         } else {
-            $this->indexWorkspace($workspace);
+            $workspaceName = WorkspaceName::fromString($workspace);
+            $this->indexWorkspace($contentRepositoryId, $workspaceName);
         }
         $this->outputLine('Finished indexing.');
     }
@@ -92,44 +72,47 @@ class NodeIndexCommandController extends CommandController
      * @param string $workspaceName
      * @throws Exception
      */
-    protected function indexWorkspace(string $workspaceName): void
+    protected function indexWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): void
     {
-        $dimensionCombinations = $this->nodeIndexer->calculateDimensionCombinations();
-        if ($dimensionCombinations !== []) {
-            foreach ($dimensionCombinations as $combination) {
-                $context = $this->contextFactory->create(['workspaceName' => $workspaceName, 'dimensions' => $combination]);
-                $rootNode = $context->getRootNode();
+        $dimensionSpacePoints = $this->nodeIndexer->calculateDimensionCombinations($contentRepositoryId);
+        if ($dimensionSpacePoints->isEmpty()) {
+            $dimensionSpacePoints = DimensionSpacePointSet::fromArray([DimensionSpacePoint::createWithoutDimensions()]);
+        }
 
-                $this->traverseNodes($rootNode);
-                $rootNode->getContext()->getFirstLevelNodeCache()->flush();
-                $this->outputLine('Workspace "' . $workspaceName . '" and dimensions "' . json_encode($combination) . '" done. (Indexed ' . $this->indexedNodes . ' nodes)');
-                $this->indexedNodes = 0;
-            }
-        } else {
-            $context = $this->contextFactory->create(['workspaceName' => $workspaceName]);
-            $rootNode = $context->getRootNode();
-
-            $this->traverseNodes($rootNode);
-            $this->outputLine('Workspace "' . $workspaceName . '" without dimensions done. (Indexed ' . $this->indexedNodes . ' nodes)');
-            $this->indexedNodes = 0;
+        foreach ($dimensionSpacePoints as $dimensionSpacePoint) {
+            $indexedNodes = $this->indexWorkspaceInDimension($contentRepositoryId, $workspaceName, $dimensionSpacePoint);
+            $this->outputLine('Workspace "' . $workspaceName . '" and dimensions "' . json_encode($dimensionSpacePoint) . '" done. (Indexed ' . $indexedNodes . ' nodes)');
         }
     }
 
     /**
-     * @param NodeInterface $currentNode
+     * @param Node $currentNode
      * @throws Exception
      */
-    protected function traverseNodes(NodeInterface $currentNode): void
+    protected function indexWorkspaceInDimension(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, DimensionSpacePoint $dimensionSpacePoint): int
     {
-        try {
-            $this->nodeIndexer->indexNode($currentNode, null, false);
-        } catch (NodeException|IndexingException|EelException $exception) {
-            throw new Exception(sprintf('Error during indexing of node %s (%s)', $currentNode->findNodePath(), (string) $currentNode->getNodeAggregateIdentifier()), 1579170291, $exception);
+        $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
+        $contentGraph = $contentRepository->getContentGraph($workspaceName);
+
+        $rootNodeAggregate = $contentGraph->findRootNodeAggregateByType(NodeTypeNameFactory::forSites());
+        $subgraph = $contentGraph->getSubgraph($dimensionSpacePoint, NeosVisibilityConstraints::excludeRemoved());
+
+        $rootNode = $subgraph->findNodeById($rootNodeAggregate->nodeAggregateId);
+        $indexedNodes = 0;
+
+        $this->nodeIndexer->indexNode($rootNode, null, false);
+        $indexedNodes++;
+
+        foreach ($subgraph->findDescendantNodes($rootNode->aggregateId, FindDescendantNodesFilter::create()) as $descendantNode) {
+            try {
+                $this->nodeIndexer->indexNode($descendantNode, null, false);
+                $indexedNodes++;
+            } catch (IndexingException|EelException $exception) {
+                throw new Exception(sprintf('Error during indexing of node %s', (string)$descendantNode->aggregateId), 1579170291, $exception);
+            };
         }
-        $this->indexedNodes++;
-        foreach ($currentNode->findChildNodes() as $childNode) {
-            $this->traverseNodes($childNode);
-        }
+
+        return $indexedNodes;
     }
 
     /**

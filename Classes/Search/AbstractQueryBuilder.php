@@ -3,7 +3,10 @@ declare(strict_types=1);
 
 namespace Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search;
 
-use Neos\ContentRepository\Domain\Model\NodeInterface;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindAncestorNodesFilter;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
+use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
+use Neos\ContentRepository\Search\Dto\NodeAggregateIdPath;
 use Neos\ContentRepository\Search\Search\QueryBuilderInterface;
 use Neos\Eel\ProtectedContextAwareInterface;
 use Neos\Flow\Annotations as Flow;
@@ -24,7 +27,7 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
     /**
      * The node inside which searching should happen
      *
-     * @var NodeInterface
+     * @var Node
      */
     protected $contextNode;
 
@@ -41,6 +44,9 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
      * @var boolean
      */
     protected $queryLogEnabled = false;
+
+    #[\Neos\Flow\Annotations\Inject]
+    protected \Neos\ContentRepositoryRegistry\ContentRepositoryRegistry $contentRepositoryRegistry;
 
     abstract protected function getSimpleSearchQueryBuilder(): \Flowpack\SimpleSearch\Search\QueryBuilderInterface;
 
@@ -75,16 +81,18 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
     }
 
     /**
-     * @param NodeInterface $contextNode
+     * @param Node $contextNode
      * @return MysqlQueryBuilder
      * @throws IllegalObjectTypeException
      */
-    public function query(NodeInterface $contextNode): QueryBuilderInterface
+    public function query(Node $contextNode): QueryBuilderInterface
     {
-        $this->getSimpleSearchQueryBuilder()->customCondition("(__parentPath LIKE '%#" . $contextNode->findNodePath() . "#%' OR __path LIKE '" . $contextNode->findNodePath() . "')");
-        $this->getSimpleSearchQueryBuilder()->like('__path', (string) $contextNode->findNodePath());
-        $this->getSimpleSearchQueryBuilder()->like('__workspace', "#" . $contextNode->getContext()->getWorkspace()->getName() . "#");
-        $this->getSimpleSearchQueryBuilder()->like('__dimensionshash', "#" . md5(json_encode($contextNode->getContext()->getDimensions())) . "#");
+        $nodeAggregateIdPath = $this->getNodeAggregateIdPath($contextNode);
+
+        $this->getSimpleSearchQueryBuilder()->customCondition("(__parentPath LIKE '%#" . $nodeAggregateIdPath->serializeToString() . "#%' OR __path LIKE '" . $nodeAggregateIdPath->serializeToString() . "')");
+        $this->getSimpleSearchQueryBuilder()->like('__path', $nodeAggregateIdPath->serializeToString());
+        $this->getSimpleSearchQueryBuilder()->like('__workspace', "#" . $contextNode->workspaceName->value . "#");
+        $this->getSimpleSearchQueryBuilder()->like('__dimensionshash', "#" . $contextNode->dimensionSpacePoint->hash . "#");
         $this->contextNode = $contextNode;
 
         return $this;
@@ -122,8 +130,8 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
      */
     public function exactMatch(string $propertyName, $propertyValue): QueryBuilderInterface
     {
-        if ($propertyValue instanceof NodeInterface) {
-            $propertyValue = (string) $propertyValue->getNodeAggregateIdentifier();
+        if ($propertyValue instanceof Node) {
+            $propertyValue = $propertyValue->aggregateId->value;
         }
 
         $this->getSimpleSearchQueryBuilder()->exactMatch($propertyName, $propertyValue);
@@ -139,8 +147,8 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
      */
     public function like(string $propertyName, $propertyValue): QueryBuilderInterface
     {
-        if ($propertyValue instanceof NodeInterface) {
-            $propertyValue = (string) $propertyValue->getNodeAggregateIdentifier();
+        if ($propertyValue instanceof Node) {
+            $propertyValue = $propertyValue->aggregateId->value;
         }
 
         $this->getSimpleSearchQueryBuilder()->like($propertyName, $propertyValue);
@@ -156,8 +164,8 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
      */
     public function greaterThan($propertyName, $propertyValue)
     {
-        if ($propertyValue instanceof NodeInterface) {
-            $propertyValue = (string) $propertyValue->getNodeAggregateIdentifier();
+        if ($propertyValue instanceof Node) {
+            $propertyValue = $propertyValue->aggregateId->value;
         }
 
         $this->getSimpleSearchQueryBuilder()->greaterThan($propertyName, $propertyValue);
@@ -173,8 +181,8 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
      */
     public function greaterThanOrEqual($propertyName, $propertyValue)
     {
-        if ($propertyValue instanceof NodeInterface) {
-            $propertyValue = (string) $propertyValue->getNodeAggregateIdentifier();
+        if ($propertyValue instanceof Node) {
+            $propertyValue = $propertyValue->aggregateId->value;
         }
 
         $this->getSimpleSearchQueryBuilder()->greaterThanOrEqual($propertyName, $propertyValue);
@@ -190,8 +198,8 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
      */
     public function lessThan($propertyName, $propertyValue)
     {
-        if ($propertyValue instanceof NodeInterface) {
-            $propertyValue = (string) $propertyValue->getNodeAggregateIdentifier();
+        if ($propertyValue instanceof Node) {
+            $propertyValue = $propertyValue->aggregateId;
         }
 
         $this->getSimpleSearchQueryBuilder()->lessThan($propertyName, $propertyValue);
@@ -207,8 +215,8 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
      */
     public function lessThanOrEqual($propertyName, $propertyValue)
     {
-        if ($propertyValue instanceof NodeInterface) {
-            $propertyValue = (string) $propertyValue->getNodeAggregateIdentifier();
+        if ($propertyValue instanceof Node) {
+            $propertyValue = $propertyValue->aggregateId->value;
         }
 
         $this->getSimpleSearchQueryBuilder()->lessThanOrEqual($propertyName, $propertyValue);
@@ -218,13 +226,10 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
     /**
      * Execute the query and return the list of nodes as result
      *
-     * @return array<\Neos\ContentRepository\Domain\Model\NodeInterface>
+     * @return array<Node>
      */
     public function execute(): \Traversable
     {
-        // Adding implicit sorting by __sortIndex (as last fallback) as we can expect it to be there for nodes.
-        $this->getSimpleSearchQueryBuilder()->sortAsc("__sortIndex");
-
         $timeBefore = microtime(true);
         $result = $this->getSimpleSearchQueryBuilder()->execute();
         $timeAfterwards = microtime(true);
@@ -235,10 +240,10 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
 
         $nodes = [];
         foreach ($result as $hit) {
-            $nodePath = $hit['__path'];
-            $node = $this->contextNode->getNode($nodePath);
-            if ($node instanceof NodeInterface) {
-                $nodes[(string) $node->getNodeAggregateIdentifier()] = $node;
+            $nodeAggregateId = NodeAggregateId::fromString($hit['__identifier']);
+            $node = $this->contentRepositoryRegistry->subgraphForNode($this->contextNode)->findNodeById($nodeAggregateId);
+            if ($node instanceof Node) {
+                $nodes[$node->aggregateId->value] = $node;
             }
         }
 
@@ -275,6 +280,17 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
         }
 
         return $count;
+    }
+
+    private function getNodeAggregateIdPath(Node $contextNode): NodeAggregateIdPath
+    {
+        $subgraph = $this->contentRepositoryRegistry->subgraphForNode($contextNode);
+        $ancestors = $subgraph->findAncestorNodes(
+            $contextNode->aggregateId,
+            FindAncestorNodesFilter::create()
+        )->reverse();
+        $nodeAggregateIdPath = NodeAggregateIdPath::fromNodes($ancestors);
+        return $nodeAggregateIdPath;
     }
 
     /**

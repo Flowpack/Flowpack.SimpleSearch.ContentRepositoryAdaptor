@@ -3,57 +3,38 @@
   properties:
     '__identifier':
       search:
-        indexing: "${node.identifier}"
+        indexing: "${node.aggregateId}"
 
     '__workspace':
       search:
-        indexing: "${'#' + node.context.workspace.name + '#'}"
+        indexing: "${'#' + node.workspaceName + '#'}"
 
     '__path':
       search:
-        indexing: "${node.path}"
+        indexing: "${Indexing.aggregateIdPath(node)}"
 
     '__parentPath':
       search:
-        indexing: "${'#' + Array.join(Indexing.buildAllPathPrefixes(node.parentPath), '#') + '#'}"
-
-    '__sortIndex':
-      search:
-        indexing: "${node.index}"
-
-    '_removed':
-      search:
-        # deliberately don't map or index this
-        indexing: ''
+        indexing: "${'#' + Array.join(Array.pop(Indexing.buildAllPathPrefixes(Indexing.aggregateIdPath(node))), '#') + '#'}"
 
     '__type':
       search:
-        indexing: "${node.nodeType.name}"
+        indexing: "${node.nodeTypeName}"
     # we index the node type INCLUDING ALL SUPERTYPES
     '__typeAndSupertypes':
       search:
-        indexing: "${'#' + Array.join(Indexing.extractNodeTypeNamesAndSupertypes(node.nodeType), '#') + '#'}"
+        indexing: "${'#' + Array.join(Indexing.extractNodeTypeNamesAndSupertypes(node), '#') + '#'}"
     '__dimensionshash':
       search:
-        indexing: "${'#' + String.md5(Json.stringify(node.context.dimensions)) + '#'}"
+        indexing: "${'#' + node.dimensionSpacePoint.hash + '#'}"
 
 'unstructured': *node
 
 'Neos.Neos:Hidable':
   properties:
-    '_hidden':
+    'neos_hidden':
       search:
-        indexing: "${node.hidden}"
-
-'Neos.Neos:Timable':
-  properties:
-    '_hiddenBeforeDateTime':
-      search:
-        indexing: "${(node.hiddenBeforeDateTime ? Date.format(node.hiddenBeforeDateTime, 'U') : null)}"
-
-    '_hiddenAfterDateTime':
-      search:
-        indexing: "${(node.hiddenAfterDateTime ? Date.format(node.hiddenAfterDateTime, 'U') : null)}"
+        indexing: '${Neos.Node.isDisabled(node)}'
 
 'Neos.NodeTypes:Text':
   search:
@@ -62,7 +43,7 @@
   properties:
     text:
       search:
-        fulltextExtractor: "${Indexing.extractHtmlTags(node.properties.text)}"
+        fulltextExtractor: "${Indexing.extractHtmlTags(value)}"
 
 'Neos.NodeTypes:Headline':
   search:
@@ -71,7 +52,7 @@
   properties:
     title:
       search:
-        fulltextExtractor: "${Indexing.extractHtmlTags(node.properties.title)}"
+        fulltextExtractor: "${Indexing.extractHtmlTags(value)}"
 
 'Neos.Neos:Document':
   search:
@@ -81,7 +62,7 @@
   properties:
     title:
       search:
-        fulltextExtractor: "${Indexing.extractHtmlTags(node.properties.title)}"
+        fulltextExtractor: "${Indexing.extractHtmlTags(value)}"
 
 'Flowpack.SimpleSearch.ContentRepositoryAdaptor:Search':
   superTypes:
