@@ -289,6 +289,7 @@ abstract class AbstractQueryBuilder implements QueryBuilderInterface, ProtectedC
             $contextNode->aggregateId,
             FindAncestorNodesFilter::create()
         )->reverse();
+        $ancestors = $ancestors->append($contextNode);
         $nodeAggregateIdPath = NodeAggregateIdPath::fromNodes($ancestors);
         return $nodeAggregateIdPath;
     }
